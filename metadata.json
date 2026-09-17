@@ -1,0 +1,6 @@
+{
+  "name": "opendesign",
+  "description": "Visual website and SaaS builder with interactive 3D elements, AI agent code assistant, and live React/Tailwind export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

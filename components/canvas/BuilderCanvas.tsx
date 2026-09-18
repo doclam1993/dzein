@@ -12,40 +12,295 @@ import {
   Boxes, GitBranch, Bot, Zap, ShieldCheck, Code2, 
   ArrowRight, Check, Sparkles, MoveUp, MoveDown, Copy, 
   Trash2, Plus, LayoutGrid, Palette, Orbit, X, Eye, 
-  MousePointerClick, HelpCircle, GripVertical, Move, RotateCcw, Target
+  MousePointerClick, HelpCircle, GripVertical, Move, RotateCcw, Target,
+  Monitor, Tablet, Smartphone, ZoomIn, ZoomOut, Maximize2,
+  Type, Wand2, Loader2, CornerDownLeft, RefreshCw,
+  Bold, Italic, AlignLeft, AlignCenter, AlignRight, Paintbrush, SlidersHorizontal
 } from 'lucide-react';
 
-export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' | 'title' | 'cta' | 'visuals', isInterHoverActive?: boolean) => {
+export const applyStylePropsAnimation = (style: CanvasBlock['style'], initial: any, animate: any, interactiveState?: any) => {
+  if (!style?.animStylePropsEnabled) return;
+
+  // 1. Couleurs (Background, Text, Border)
+  if (style.animBgColorStart && style.animBgColorEnd) {
+    initial.backgroundColor = style.animBgColorStart;
+    animate.backgroundColor = style.animBgColorEnd;
+    if (interactiveState) interactiveState.backgroundColor = style.animBgColorEnd;
+  }
+  if (style.animTextColorStart && style.animTextColorEnd) {
+    initial.color = style.animTextColorStart;
+    animate.color = style.animTextColorEnd;
+    if (interactiveState) interactiveState.color = style.animTextColorEnd;
+  }
+  if (style.animBorderColorStart && style.animBorderColorEnd) {
+    initial.borderColor = style.animBorderColorStart;
+    animate.borderColor = style.animBorderColorEnd;
+    if (interactiveState) interactiveState.borderColor = style.animBorderColorEnd;
+  }
+
+  // 2. Bordures, Rayons & Contours (Border, Radius & Outline)
+  if (style.animBorderRadiusStart !== undefined && style.animBorderRadiusEnd !== undefined) {
+    initial.borderRadius = `${style.animBorderRadiusStart}px`;
+    animate.borderRadius = `${style.animBorderRadiusEnd}px`;
+    if (interactiveState) interactiveState.borderRadius = `${style.animBorderRadiusEnd}px`;
+  }
+  if (style.animBorderWidthStart !== undefined && style.animBorderWidthEnd !== undefined) {
+    initial.borderWidth = `${style.animBorderWidthStart}px`;
+    animate.borderWidth = `${style.animBorderWidthEnd}px`;
+    if (interactiveState) interactiveState.borderWidth = `${style.animBorderWidthEnd}px`;
+  }
+  if (style.animOutlineColorStart || style.animOutlineColorEnd || style.animOutlineWidthStart !== undefined || style.animOutlineWidthEnd !== undefined) {
+    const oColorStart = style.animOutlineColorStart || 'transparent';
+    const oColorEnd = style.animOutlineColorEnd || 'currentColor';
+    const oWidthStart = style.animOutlineWidthStart ?? 0;
+    const oWidthEnd = style.animOutlineWidthEnd ?? 2;
+    const oOffsetStart = style.animOutlineOffsetStart ?? 0;
+    const oOffsetEnd = style.animOutlineOffsetEnd ?? 0;
+    initial.outline = `${oWidthStart}px solid ${oColorStart}`;
+    initial.outlineOffset = `${oOffsetStart}px`;
+    animate.outline = `${oWidthEnd}px solid ${oColorEnd}`;
+    animate.outlineOffset = `${oOffsetEnd}px`;
+    if (interactiveState) {
+      interactiveState.outline = `${oWidthEnd}px solid ${oColorEnd}`;
+      interactiveState.outlineOffset = `${oOffsetEnd}px`;
+    }
+  }
+
+  // 3. Ombres, Halos & Glow (Box Shadow & Text Shadow)
+  if (style.animBoxShadowStart || style.animBoxShadowEnd) {
+    if (style.animBoxShadowStart) initial.boxShadow = style.animBoxShadowStart;
+    if (style.animBoxShadowEnd) {
+      animate.boxShadow = style.animBoxShadowEnd;
+      if (interactiveState) interactiveState.boxShadow = style.animBoxShadowEnd;
+    }
+  }
+  if (style.animTextShadowStart || style.animTextShadowEnd) {
+    if (style.animTextShadowStart) initial.textShadow = style.animTextShadowStart;
+    if (style.animTextShadowEnd) {
+      animate.textShadow = style.animTextShadowEnd;
+      if (interactiveState) interactiveState.textShadow = style.animTextShadowEnd;
+    }
+  }
+
+  // 4. Verre & Translucidité (Backdrop Filter / Glassmorphism)
+  if (style.animBackdropBlurStart !== undefined || style.animBackdropBlurEnd !== undefined) {
+    initial.backdropFilter = `blur(${style.animBackdropBlurStart ?? 0}px)`;
+    animate.backdropFilter = `blur(${style.animBackdropBlurEnd ?? 16}px)`;
+    if (interactiveState) interactiveState.backdropFilter = `blur(${style.animBackdropBlurEnd ?? 16}px)`;
+  }
+
+  // 5. Filtres Graphiques & FX (Visual Filters: Blur, Brightness, Contrast, Saturate, Hue, Grayscale, Invert, Sepia)
+  const filtersStart: string[] = [];
+  const filtersEnd: string[] = [];
+  if (style.animFilterBlurStart !== undefined || style.animFilterBlurEnd !== undefined) {
+    filtersStart.push(`blur(${style.animFilterBlurStart ?? 0}px)`);
+    filtersEnd.push(`blur(${style.animFilterBlurEnd ?? 0}px)`);
+  }
+  if (style.animFilterBrightness !== undefined) {
+    filtersStart.push('brightness(1)');
+    filtersEnd.push(`brightness(${style.animFilterBrightness})`);
+  }
+  if (style.animFilterContrast !== undefined) {
+    filtersStart.push('contrast(1)');
+    filtersEnd.push(`contrast(${style.animFilterContrast})`);
+  }
+  if (style.animFilterSaturate !== undefined) {
+    filtersStart.push('saturate(1)');
+    filtersEnd.push(`saturate(${style.animFilterSaturate})`);
+  }
+  if (style.animFilterHueRotate !== undefined) {
+    filtersStart.push('hue-rotate(0deg)');
+    filtersEnd.push(`hue-rotate(${style.animFilterHueRotate}deg)`);
+  }
+  if (style.animFilterGrayscale !== undefined) {
+    filtersStart.push('grayscale(0%)');
+    filtersEnd.push(`grayscale(${style.animFilterGrayscale}%)`);
+  }
+  if (style.animFilterInvertStart !== undefined || style.animFilterInvertEnd !== undefined) {
+    filtersStart.push(`invert(${style.animFilterInvertStart ?? 0}%)`);
+    filtersEnd.push(`invert(${style.animFilterInvertEnd ?? 100}%)`);
+  }
+  if (style.animFilterSepiaStart !== undefined || style.animFilterSepiaEnd !== undefined) {
+    filtersStart.push(`sepia(${style.animFilterSepiaStart ?? 0}%)`);
+    filtersEnd.push(`sepia(${style.animFilterSepiaEnd ?? 100}%)`);
+  }
+  if (filtersStart.length > 0 || filtersEnd.length > 0) {
+    const s = filtersStart.join(' ');
+    const e = filtersEnd.join(' ');
+    if (s) initial.filter = initial.filter && initial.filter !== 'blur(0px)' ? `${initial.filter} ${s}` : s;
+    if (e) {
+      animate.filter = animate.filter && animate.filter !== 'blur(0px)' ? `${animate.filter} ${e}` : e;
+      if (interactiveState) interactiveState.filter = interactiveState.filter && interactiveState.filter !== 'blur(0px)' ? `${interactiveState.filter} ${e}` : e;
+    }
+  }
+
+  // 6. Typographie & Texte (Font Size, Font Weight, Line Height, Tracking)
+  if (style.animFontSizeStart !== undefined && style.animFontSizeEnd !== undefined) {
+    initial.fontSize = `${style.animFontSizeStart}px`;
+    animate.fontSize = `${style.animFontSizeEnd}px`;
+    if (interactiveState) interactiveState.fontSize = `${style.animFontSizeEnd}px`;
+  }
+  if (style.animFontWeightStart !== undefined && style.animFontWeightEnd !== undefined) {
+    initial.fontWeight = style.animFontWeightStart;
+    animate.fontWeight = style.animFontWeightEnd;
+    if (interactiveState) interactiveState.fontWeight = style.animFontWeightEnd;
+  }
+  if (style.animLineHeightStart !== undefined && style.animLineHeightEnd !== undefined) {
+    initial.lineHeight = style.animLineHeightStart;
+    animate.lineHeight = style.animLineHeightEnd;
+    if (interactiveState) interactiveState.lineHeight = style.animLineHeightEnd;
+  }
+  if (style.animLetterSpacingStart !== undefined && style.animLetterSpacingEnd !== undefined) {
+    initial.letterSpacing = `${style.animLetterSpacingStart}px`;
+    animate.letterSpacing = `${style.animLetterSpacingEnd}px`;
+    if (interactiveState) interactiveState.letterSpacing = `${style.animLetterSpacingEnd}px`;
+  }
+
+  // 7. Espacement, Dimensions & Opacité (Padding, Margin, Gap, Width, Height, Opacity)
+  if (style.animPaddingStart !== undefined && style.animPaddingEnd !== undefined) {
+    initial.padding = `${style.animPaddingStart}px`;
+    animate.padding = `${style.animPaddingEnd}px`;
+    if (interactiveState) interactiveState.padding = `${style.animPaddingEnd}px`;
+  }
+  if (style.animMarginStart !== undefined && style.animMarginEnd !== undefined) {
+    initial.margin = `${style.animMarginStart}px`;
+    animate.margin = `${style.animMarginEnd}px`;
+    if (interactiveState) interactiveState.margin = `${style.animMarginEnd}px`;
+  }
+  if (style.animGapStart !== undefined && style.animGapEnd !== undefined) {
+    initial.gap = `${style.animGapStart}px`;
+    animate.gap = `${style.animGapEnd}px`;
+    if (interactiveState) interactiveState.gap = `${style.animGapEnd}px`;
+  }
+  if (style.animWidthStart !== undefined && style.animWidthEnd !== undefined) {
+    initial.width = `${style.animWidthStart}px`;
+    animate.width = `${style.animWidthEnd}px`;
+    if (interactiveState) interactiveState.width = `${style.animWidthEnd}px`;
+  }
+  if (style.animHeightStart !== undefined && style.animHeightEnd !== undefined) {
+    initial.height = `${style.animHeightStart}px`;
+    animate.height = `${style.animHeightEnd}px`;
+    if (interactiveState) interactiveState.height = `${style.animHeightEnd}px`;
+  }
+  if (style.animOpacityStart !== undefined && style.animOpacityEnd !== undefined) {
+    initial.opacity = style.animOpacityStart;
+    animate.opacity = style.animOpacityEnd;
+    if (interactiveState) interactiveState.opacity = style.animOpacityEnd;
+  }
+};
+
+export const resolveFramerAnimation = (block: CanvasBlock, targetType: string, isInterHoverActive?: boolean) => {
   const style = block.style || {};
   
-  // 1. Orchestre d'Animation Avancé (Total Freedom)
-  if (style.advancedAnimEnabled && targetType === (style.advancedAnimTarget || 'block')) {
+  // Style properties matching check
+  const styleTarget = style.animStyleTarget || 'block';
+  const isStyleMatched = !!style.animStylePropsEnabled && (
+    styleTarget === targetType ||
+    (styleTarget === 'cta' && (targetType === 'primaryCta' || targetType === 'secondaryCta')) ||
+    (targetType === 'cta' && (styleTarget === 'primaryCta' || styleTarget === 'secondaryCta'))
+  );
+
+  // 1. Orchestre d'Animation Avancé (Total Freedom & Pro Level)
+  const advTarget = style.advancedAnimTarget || 'block';
+  const isAdvMatched = style.advancedAnimEnabled && (
+    advTarget === targetType ||
+    (advTarget === 'cta' && (targetType === 'primaryCta' || targetType === 'secondaryCta')) ||
+    (targetType === 'cta' && (advTarget === 'primaryCta' || advTarget === 'secondaryCta'))
+  );
+
+  if (isAdvMatched) {
     const isSpring = style.advancedAnimType === 'spring';
+    const isKeyframes = style.advancedAnimType === 'keyframes';
+    
+    // Parse custom bezier if specified
+    let easeVal: any = undefined;
+    if (style.advancedAnimCubicBezier) {
+      const parts = style.advancedAnimCubicBezier.split(',').map(n => parseFloat(n.trim()));
+      if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+        easeVal = parts;
+      }
+    }
+
     const transition: any = {
       type: isSpring ? 'spring' : 'tween',
       stiffness: style.advancedAnimStiffness ?? 100,
       damping: style.advancedAnimDamping ?? 10,
       mass: style.advancedAnimMass ?? 1,
+      velocity: style.advancedAnimVelocity ?? 0,
       duration: style.animationDuration ?? 0.6,
       delay: style.animationDelay ?? 0,
       staggerChildren: style.advancedAnimStagger ?? 0,
+      ease: !isSpring && easeVal ? easeVal : undefined,
     };
     
     const initial: any = {
       x: style.advancedAnimTranslateX ?? 0,
       y: style.advancedAnimTranslateY ?? 0,
+      z: style.advancedAnimTranslateZ ?? 0,
       scale: style.advancedAnimScale ?? 1,
       rotate: style.advancedAnimRotate ?? 0,
+      rotateX: style.advancedAnimRotateX ?? 0,
+      rotateY: style.advancedAnimRotateY ?? 0,
+      skewX: style.advancedAnimSkewX ?? 0,
       opacity: style.advancedAnimOpacity ?? 1,
+      filter: (style.advancedAnimBlur && style.advancedAnimBlur > 0) ? `blur(${style.advancedAnimBlur}px)` : 'blur(0px)',
     };
 
-    const animate: any = {
+    let animate: any = {
       x: 0,
       y: 0,
+      z: 0,
       scale: 1,
       rotate: 0,
+      rotateX: 0,
+      rotateY: 0,
+      skewX: 0,
       opacity: 1,
+      filter: 'blur(0px)',
     };
+
+    // Keyframes Studio Presets
+    if (isKeyframes && style.animationKeyframesMode && style.animationKeyframesMode !== 'none') {
+      switch (style.animationKeyframesMode) {
+        case 'heartbeat':
+          animate.scale = [1, 1.15, 0.95, 1.2, 1];
+          transition.repeat = Infinity;
+          transition.duration = 1.2;
+          break;
+        case 'cinematicZoom':
+          animate.scale = [0.9, 1.05, 1];
+          animate.opacity = [0, 0.8, 1];
+          transition.duration = 1.4;
+          break;
+        case 'rubberBand':
+          animate.scale = [1, 1.25, 0.75, 1.15, 0.95, 1];
+          transition.duration = 0.9;
+          break;
+        case 'jello':
+          animate.skewX = [0, -12, 10, -6, 3, 0];
+          transition.duration = 1;
+          break;
+        case 'glitch':
+          animate.x = [0, -4, 4, -2, 3, 0];
+          animate.filter = ['blur(0px)', 'blur(2px)', 'blur(0px)'];
+          transition.repeat = Infinity;
+          transition.repeatDelay = 2;
+          transition.duration = 0.4;
+          break;
+        case 'magneticFloat':
+          animate.y = [0, -10, 2, -6, 0];
+          animate.rotate = [0, 2, -2, 1, 0];
+          transition.repeat = Infinity;
+          transition.repeatType = 'reverse';
+          transition.duration = 3;
+          break;
+      }
+    }
+
+    // Apply animatable style properties if matched
+    if (isStyleMatched) {
+      applyStylePropsAnimation(style, initial, animate);
+    }
 
     const trigger = style.animationTrigger || 'load';
     
@@ -53,7 +308,7 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
       return {
         initial,
         whileInView: animate,
-        viewport: { once: true, margin: "-100px" },
+        viewport: { once: true, margin: "-80px" },
         transition
       };
     } else if (trigger === 'hover') {
@@ -78,7 +333,14 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
   }
 
   // 2. Cross-element interactive hover trigger handling
-  if (style.hoverTriggerSource && style.hoverTriggerSource !== 'none' && style.hoverTriggerTarget === targetType) {
+  const hoverTarget = style.hoverTriggerTarget || 'none';
+  const isHoverMatched = style.hoverTriggerSource && style.hoverTriggerSource !== 'none' && (
+    hoverTarget === targetType ||
+    (hoverTarget === 'cta' && (targetType === 'primaryCta' || targetType === 'secondaryCta')) ||
+    (targetType === 'cta' && (hoverTarget === 'primaryCta' || hoverTarget === 'secondaryCta'))
+  );
+
+  if (isHoverMatched) {
     const action = style.hoverTriggerAction || 'fade';
     const easing = style.hoverTriggerEasing || 'easeInOut';
     const duration = style.hoverTriggerDuration ?? 0.5;
@@ -94,8 +356,8 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
       case 'easeIn': easeConfig = "easeIn"; break;
       case 'easeOut': easeConfig = "easeOut"; break;
       case 'easeInOut': easeConfig = "easeInOut"; break;
-      case 'spring': typeConfig = "spring"; stiffness = 120; damping = 12; break;
-      case 'bounce': typeConfig = "spring"; stiffness = 150; damping = 8; break;
+      case 'spring': typeConfig = "spring"; stiffness = 130; damping = 12; break;
+      case 'bounce': typeConfig = "spring"; stiffness = 160; damping = 8; break;
     }
 
     const hoverTransition: any = {
@@ -140,7 +402,19 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
         break;
       case 'glow':
         initial = { boxShadow: "0px 0px 0px rgba(0,0,0,0)" };
-        animate = isInterHoverActive ? { boxShadow: "0 12px 24px rgba(139, 92, 246, 0.3)" } : { boxShadow: "0px 0px 0px rgba(0,0,0,0)" };
+        animate = isInterHoverActive ? { boxShadow: "0 12px 28px rgba(168, 85, 247, 0.45)" } : { boxShadow: "0px 0px 0px rgba(0,0,0,0)" };
+        break;
+      case 'liftShadow':
+        initial = { y: 0, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" };
+        animate = isInterHoverActive ? { y: -8, boxShadow: "0 20px 30px rgba(0,0,0,0.35)" } : { y: 0, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" };
+        break;
+      case 'tilt3D':
+        initial = { rotateX: 0, rotateY: 0, scale: 1 };
+        animate = isInterHoverActive ? { rotateX: 10, rotateY: -10, scale: 1.05 } : { rotateX: 0, rotateY: 0, scale: 1 };
+        break;
+      case 'colorShift':
+        initial = { filter: "hue-rotate(0deg)" };
+        animate = isInterHoverActive ? { filter: "hue-rotate(60deg) brightness(1.1)" } : { filter: "hue-rotate(0deg)" };
         break;
     }
 
@@ -161,12 +435,17 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
 
   // Fallback to older properties for compatibility
   const oldEntrance = style.animationEntrance;
-  const oldHover = style.animationHover;
-  const oldLoop = style.animationLoop;
 
   // If we are applying block-level animation but the target is set to something specific inside the block,
   // we should only apply standard subtle entrance to the block container so it doesn't stay hidden.
-  if (currentTarget !== targetType) {
+  const isTargetMatched = (
+    currentTarget === targetType ||
+    (currentTarget === 'cta' && (targetType === 'primaryCta' || targetType === 'secondaryCta')) ||
+    (targetType === 'cta' && (currentTarget === 'primaryCta' || currentTarget === 'secondaryCta')) ||
+    isStyleMatched
+  );
+
+  if (!isTargetMatched) {
     if (targetType === 'block') {
       let entranceInitial: any = { opacity: 0 };
       let entranceAnimate: any = { opacity: 1 };
@@ -223,8 +502,14 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
       break;
     case 'bounce':
       typeConfig = "spring";
-      stiffness = 150;
+      stiffness = 160;
       damping = 8;
+      break;
+    case 'anticipate':
+      easeConfig = "anticipate";
+      break;
+    case 'cubicBezier':
+      easeConfig = [0.16, 1, 0.3, 1]; // Apple-grade smooth deceleration
       break;
   }
 
@@ -273,12 +558,38 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
       transition.repeat = Infinity;
       transition.repeatType = "reverse";
       break;
+    case 'flip':
+      initial = { opacity: 0, rotateX: 90 };
+      animate = { opacity: 1, rotateX: 0 };
+      break;
+    case 'blurIn':
+      initial = { opacity: 0, filter: 'blur(12px)', scale: 0.95 };
+      animate = { opacity: 1, filter: 'blur(0px)', scale: 1 };
+      break;
+    case 'pop':
+      initial = { opacity: 0, scale: 0.5 };
+      animate = { opacity: 1, scale: [0.5, 1.08, 1] };
+      break;
+    case 'swing':
+      initial = { opacity: 0, rotate: 15 };
+      animate = { opacity: 1, rotate: [15, -10, 5, -2, 0] };
+      break;
+    case 'revealMask':
+      initial = { opacity: 0, clipPath: 'inset(100% 0% 0% 0%)' };
+      animate = { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)' };
+      break;
+  }
+
+  // 2.5 Apply animatable style properties for load/scroll before trigger overrides
+  if (isStyleMatched && (currentTrigger === 'load' || currentTrigger === 'scroll')) {
+    applyStylePropsAnimation(style, initial, animate);
   }
 
   // 3. Handle Triggers (load, click, hover, scroll)
   if (currentTrigger === 'hover') {
     initial = {};
     animate = {};
+    whileHover = {};
     
     switch (currentAction) {
       case 'fade':
@@ -288,10 +599,10 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
         whileHover = { y: -12 };
         break;
       case 'zoom':
-        whileHover = { scale: 1.05 };
+        whileHover = { scale: 1.06 };
         break;
       case 'rotate':
-        whileHover = { rotate: 3, scale: 1.02 };
+        whileHover = { rotate: 4, scale: 1.02 };
         break;
       case 'shake':
         whileHover = { x: [-3, 3, -3, 3, 0], transition: { duration: 0.4 } };
@@ -302,10 +613,30 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
           transition: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
         };
         break;
+      case 'flip':
+        whileHover = { rotateY: 180, transition: { duration: 0.6 } };
+        break;
+      case 'blurIn':
+        whileHover = { filter: 'drop-shadow(0 0 16px rgba(147, 51, 234, 0.5))' };
+        break;
+      case 'pop':
+        whileHover = { scale: 1.1 };
+        break;
+      case 'swing':
+        whileHover = { rotate: [-5, 5, -3, 3, 0], transition: { duration: 0.5 } };
+        break;
+      case 'revealMask':
+        whileHover = { scale: 1.03 };
+        break;
+    }
+
+    if (isStyleMatched) {
+      applyStylePropsAnimation(style, initial, animate, whileHover);
     }
   } else if (currentTrigger === 'click') {
     initial = {};
     animate = {};
+    whileTap = {};
     
     switch (currentAction) {
       case 'zoom':
@@ -323,6 +654,10 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
       default:
         whileTap = { scale: 0.95 };
         break;
+    }
+
+    if (isStyleMatched) {
+      applyStylePropsAnimation(style, initial, animate, whileTap);
     }
   } else if (currentTrigger === 'scroll') {
     return {
@@ -370,6 +705,34 @@ export const resolveFramerAnimation = (block: CanvasBlock, targetType: 'block' |
         loopTransition.ease = "linear";
         loopTransition.duration = 8;
         break;
+      case 'breathe':
+        animate = {
+          ...animate,
+          scale: [1, 1.03, 1],
+          opacity: [1, 0.85, 1]
+        };
+        loopTransition.duration = 3.5;
+        break;
+      case 'neonGlow':
+        animate = {
+          ...animate,
+          filter: [
+            'drop-shadow(0 0 4px rgba(168, 85, 247, 0.4))',
+            'drop-shadow(0 0 16px rgba(168, 85, 247, 0.85))',
+            'drop-shadow(0 0 4px rgba(168, 85, 247, 0.4))'
+          ]
+        };
+        loopTransition.duration = 2.2;
+        break;
+      case 'floatDrift':
+        animate = {
+          ...animate,
+          y: [0, -10, 0],
+          x: [0, 4, 0],
+          rotate: [0, 1.5, 0]
+        };
+        loopTransition.duration = 4;
+        break;
     }
 
     return {
@@ -400,14 +763,17 @@ interface BuilderCanvasProps {
   onReorderBlocks?: (sourceIndex: number, targetIndex: number) => void;
   onAddBlock: (type: BlockType, afterIndex?: number) => void;
   viewportMode: ViewportMode;
+  onViewportChange?: (mode: ViewportMode) => void;
   zoomLevel: number;
+  onZoomChange?: (zoom: number) => void;
   isPreviewMode: boolean;
+  onTogglePreviewMode?: () => void;
   isFreeformMode?: boolean;
   onToggleFreeformMode?: () => void;
   themeAccent: string;
 }
 
-// Inline Text Editor Component for direct on-canvas WYSIWYG editing
+// Inline WYSIWYG Text Editor Component for direct on-canvas double-click editing
 const InlineText: React.FC<{
   value: string;
   onChange: (val: string) => void;
@@ -415,15 +781,102 @@ const InlineText: React.FC<{
   className?: string;
   disabled?: boolean;
   multiline?: boolean;
-}> = ({ value, onChange, placeholder = 'Tapez votre texte...', className = '', disabled = false, multiline = false }) => {
+  label?: string;
+}> = ({ value, onChange, placeholder = 'Tapez votre texte...', className = '', disabled = false, multiline = false, label }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showAiMenu, setShowAiMenu] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const contentRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLSpanElement>(null);
 
-  // Sync content with value if changed externally
+  const prevValueRef = useRef(value);
+
+  // Sync DOM content whenever external value changes
   useEffect(() => {
-    if (contentRef.current && contentRef.current.textContent !== value) {
+    if (contentRef.current && contentRef.current.textContent !== value && !isEditing) {
       contentRef.current.textContent = value;
     }
-  }, [value]);
+    prevValueRef.current = value;
+  }, [value, isEditing]);
+
+  // When entering editing mode, focus and select text
+  useEffect(() => {
+    if (isEditing && contentRef.current) {
+      contentRef.current.focus();
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(contentRef.current);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      } catch {
+        // Fallback focus
+      }
+    }
+  }, [isEditing]);
+
+  const commitChange = (newValue?: string) => {
+    const textToSave = (newValue !== undefined ? newValue : (contentRef.current?.textContent ?? draft)).trim();
+    setIsEditing(false);
+    setShowAiMenu(false);
+    if (textToSave !== value && textToSave.length > 0) {
+      onChange(textToSave);
+    } else if (textToSave.length === 0 && placeholder) {
+      onChange(placeholder);
+    }
+  };
+
+  const cancelChange = () => {
+    setIsEditing(false);
+    setShowAiMenu(false);
+    setDraft(value);
+    if (contentRef.current) {
+      contentRef.current.textContent = value;
+    }
+  };
+
+  const handleCaseTransform = (type: 'upper' | 'lower' | 'title') => {
+    const current = contentRef.current?.textContent || draft;
+    let res = current;
+    if (type === 'upper') res = current.toUpperCase();
+    else if (type === 'lower') res = current.toLowerCase();
+    else if (type === 'title') {
+      res = current.replace(/\b\w/g, (l) => l.toUpperCase());
+    }
+    setDraft(res);
+    if (contentRef.current) contentRef.current.textContent = res;
+  };
+
+  const handleAiTransform = async (action: string) => {
+    const current = contentRef.current?.textContent || draft;
+    if (!current) return;
+    setIsAiLoading(true);
+    setShowAiMenu(false);
+    try {
+      const res = await fetch('/api/ai/text-transform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: current,
+          action,
+          context: label || 'Website Text',
+        }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        setDraft(data.result);
+        if (contentRef.current) {
+          contentRef.current.textContent = data.result;
+        }
+      }
+    } catch (err) {
+      console.error('AI Text transform failed:', err);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   if (disabled) {
     return <span className={className}>{value || placeholder}</span>;
@@ -431,28 +884,180 @@ const InlineText: React.FC<{
 
   return (
     <span
-      ref={contentRef}
-      contentEditable
-      suppressContentEditableWarning
-      onBlur={(e) => {
-        const text = e.currentTarget.textContent || '';
-        if (text !== value) {
-          onChange(text);
-        }
+      ref={containerRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        if (!isEditing) setShowAiMenu(false);
       }}
-      onKeyDown={(e) => {
-        if (!multiline && e.key === 'Enter') {
-          e.preventDefault();
-          e.currentTarget.blur();
-        }
-      }}
-      onClick={(e) => e.stopPropagation()}
-      title="Cliquez pour modifier directement"
-      className={`inline-block outline-none transition-all duration-150 cursor-text ${
-        !disabled ? 'hover:bg-indigo-500/15 hover:ring-1 hover:ring-indigo-400/50 focus:bg-indigo-500/20 focus:ring-2 focus:ring-indigo-400 rounded px-1 -mx-1' : ''
-      } ${className}`}
+      className={`relative inline-block align-baseline transition-all duration-150 ${className}`}
     >
-      {value || placeholder}
+      {/* Floating Hover Badge when not editing */}
+      {isHovered && !isEditing && (
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 z-40 px-2 py-0.5 rounded-md bg-[#080d1a]/95 text-[10px] text-cyan-300 font-sans font-medium whitespace-nowrap shadow-xl border border-cyan-500/30 backdrop-blur-md pointer-events-none flex items-center gap-1 animate-in fade-in duration-100">
+          <Type className="w-2.5 h-2.5 text-cyan-400" />
+          <span>Double-clic pour éditer</span>
+        </span>
+      )}
+
+      {/* Floating WYSIWYG Quick Toolbar when editing */}
+      {isEditing && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.preventDefault()}
+          className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 p-1 rounded-xl bg-[#080d1a]/95 border border-indigo-500/40 shadow-2xl backdrop-blur-2xl text-white text-xs animate-in fade-in zoom-in-95 duration-150 select-none whitespace-nowrap"
+        >
+          {/* AI Quick Rewriter Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowAiMenu(!showAiMenu)}
+              title="Assistant IA Réécriture"
+              disabled={isAiLoading}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-300 border border-indigo-400/30 text-[11px] font-medium transition-colors"
+            >
+              {isAiLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin text-indigo-300" />
+              ) : (
+                <Wand2 className="w-3 h-3 text-indigo-400" />
+              )}
+              <span>IA</span>
+            </button>
+
+            {/* AI Action Popover */}
+            {showAiMenu && (
+              <div className="absolute top-8 left-0 z-50 w-48 p-1 rounded-xl bg-[#090e1d]/98 border border-white/15 shadow-2xl backdrop-blur-2xl text-xs flex flex-col gap-0.5 animate-in fade-in duration-150">
+                <button
+                  onClick={() => handleAiTransform('punchy')}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[11px] transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Plus percutant</span>
+                </button>
+                <button
+                  onClick={() => handleAiTransform('shorten')}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[11px] transition-colors"
+                >
+                  <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>Raccourcir (Concis)</span>
+                </button>
+                <button
+                  onClick={() => handleAiTransform('professional')}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[11px] transition-colors"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Ton Pro B2B</span>
+                </button>
+                <div className="h-[1px] bg-white/10 my-0.5" />
+                <button
+                  onClick={() => handleAiTransform('translate_en')}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[11px] transition-colors"
+                >
+                  <span>🇬🇧</span>
+                  <span>Traduire en Anglais</span>
+                </button>
+                <button
+                  onClick={() => handleAiTransform('translate_fr')}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[11px] transition-colors"
+                >
+                  <span>🇫🇷</span>
+                  <span>Traduire en Français</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="h-3.5 w-[1px] bg-white/10 mx-0.5" />
+
+          {/* Quick Case Transforms */}
+          <button
+            onClick={() => handleCaseTransform('upper')}
+            title="Tout en majuscules (MAJ)"
+            className="px-1.5 py-1 rounded-md text-[10px] font-mono text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            AA
+          </button>
+          <button
+            onClick={() => handleCaseTransform('title')}
+            title="Première lettre en majuscule (Titre)"
+            className="px-1.5 py-1 rounded-md text-[10px] font-mono text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            Aa
+          </button>
+          <button
+            onClick={() => handleCaseTransform('lower')}
+            title="Tout en minuscules (min)"
+            className="px-1.5 py-1 rounded-md text-[10px] font-mono text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            aa
+          </button>
+
+          <div className="h-3.5 w-[1px] bg-white/10 mx-0.5" />
+
+          {/* Validate Button */}
+          <button
+            onClick={() => commitChange()}
+            title="Valider la modification (Entrée)"
+            className="p-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 transition-colors"
+          >
+            <Check className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Cancel Button */}
+          <button
+            onClick={cancelChange}
+            title="Annuler (Échap)"
+            className="p-1 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-rose-500/20 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Editable Text Surface */}
+      <span
+        ref={contentRef}
+        contentEditable={isEditing}
+        suppressContentEditableWarning
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          setDraft(contentRef.current?.textContent || value);
+          setIsEditing(true);
+        }}
+        onClick={(e) => {
+          if (!isEditing) {
+            // Let the single click select the container or element normally
+          } else {
+            e.stopPropagation();
+          }
+        }}
+        onBlur={() => {
+          if (isEditing && !showAiMenu) {
+            // Slight delay so toolbar buttons can be clicked without immediate blur cancellation
+            setTimeout(() => {
+              if (isEditing) commitChange();
+            }, 180);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelChange();
+          } else if (!multiline && e.key === 'Enter') {
+            e.preventDefault();
+            commitChange();
+          } else if (multiline && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            commitChange();
+          }
+        }}
+        className={`outline-none transition-all duration-150 inline-block align-baseline ${
+          isEditing
+            ? 'ring-2 ring-indigo-400 bg-indigo-500/20 text-white rounded px-1.5 py-0.5 shadow-lg shadow-indigo-500/20 cursor-text min-w-[30px]'
+            : 'hover:ring-1 hover:ring-indigo-400/40 hover:bg-white/[0.04] rounded px-0.5 cursor-pointer'
+        }`}
+      >
+        {value || placeholder}
+      </span>
     </span>
   );
 };
@@ -470,8 +1075,11 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   onReorderBlocks,
   onAddBlock,
   viewportMode,
+  onViewportChange,
   zoomLevel,
+  onZoomChange,
   isPreviewMode,
+  onTogglePreviewMode,
   isFreeformMode = false,
   onToggleFreeformMode,
   themeAccent,
@@ -479,6 +1087,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   const [isAnnualBilling, setIsAnnualBilling] = useState(false);
   const [insertMenuIndex, setInsertMenuIndex] = useState<number | null>(null);
   const [hoveredElements, setHoveredElements] = useState<Record<string, string>>({});
+  const currentSelectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   // Helper to compute element-level text color taking elementStyles, block section styles, and fallbacks into account
   const getElemTextColor = (
@@ -547,9 +1156,24 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     if (custom.marginRight !== undefined) styleObj.marginRight = `${custom.marginRight}px`;
     if (custom.opacity !== undefined) styleObj.opacity = custom.opacity;
     if (custom.boxShadow) styleObj.boxShadow = custom.boxShadow;
+    if (custom.overflow) styleObj.overflow = custom.overflow;
     if (custom.backdropBlur !== undefined) {
       styleObj.backdropFilter = `blur(${custom.backdropBlur}px)`;
       styleObj.WebkitBackdropFilter = `blur(${custom.backdropBlur}px)`;
+    }
+
+    // CSS Visual Filters
+    const filterParts: string[] = [];
+    if (custom.filterBlur) filterParts.push(`blur(${custom.filterBlur}px)`);
+    if (custom.filterBrightness !== undefined && custom.filterBrightness !== 1) filterParts.push(`brightness(${custom.filterBrightness})`);
+    if (custom.filterContrast !== undefined && custom.filterContrast !== 1) filterParts.push(`contrast(${custom.filterContrast})`);
+    if (custom.filterSaturate !== undefined && custom.filterSaturate !== 1) filterParts.push(`saturate(${custom.filterSaturate})`);
+    if (custom.filterHueRotate) filterParts.push(`hue-rotate(${custom.filterHueRotate}deg)`);
+    if (custom.filterGrayscale) filterParts.push(`grayscale(${custom.filterGrayscale}%)`);
+    if (custom.filterInvert) filterParts.push(`invert(${custom.filterInvert}%)`);
+    if (filterParts.length > 0) {
+      styleObj.filter = filterParts.join(' ');
+      (styleObj as any).WebkitFilter = filterParts.join(' ');
     }
     return styleObj;
   };
@@ -589,6 +1213,18 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     currentY: number;
   } | null>(null);
 
+  // Smart Snap Guides interface & state
+  interface SnapGuide {
+    id: string;
+    orientation: 'vertical' | 'horizontal';
+    positionPercent: number;
+    label: string;
+    color: 'cyan' | 'magenta';
+    coordText?: string;
+  }
+
+  const [activeSnapGuides, setActiveSnapGuides] = useState<SnapGuide[]>([]);
+
   // 2D Freeform Pointer Dragging state for individual Elements (Texts, Buttons, Badges, etc.)
   const [freeDraggingElement, setFreeDraggingElement] = useState<{
     blockId: string;
@@ -601,49 +1237,148 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     currentY: number;
   } | null>(null);
 
-  // Global window listeners for high-precision 2D free dragging
+  // Global window listeners for high-precision 2D free dragging with Smart Snap Guides
   useEffect(() => {
     if (!freeDraggingBlock && !freeDraggingCard && !freeDraggingPlan && !freeDraggingElement) return;
 
     const scale = Math.max(0.1, zoomLevel / 100);
 
     const handleWindowPointerMove = (e: PointerEvent) => {
+      const guides: SnapGuide[] = [];
+
       if (freeDraggingBlock) {
         const dx = (e.clientX - freeDraggingBlock.startX) / scale;
         const dy = (e.clientY - freeDraggingBlock.startY) / scale;
         let nx = Math.round(freeDraggingBlock.origX + dx);
         let ny = Math.round(freeDraggingBlock.origY + dy);
-        // Magnetic snap to center if close
-        if (Math.abs(nx) < 14) nx = 0;
+
+        // Magnetic snap to canvas center X=0
+        if (Math.abs(nx) < 14) {
+          nx = 0;
+          guides.push({
+            id: 'guide-center-x',
+            orientation: 'vertical',
+            positionPercent: 50,
+            label: 'Centre Canvas',
+            color: 'cyan',
+            coordText: 'X: 0px',
+          });
+        }
+
+        // Magnetic snap to vertical origin Y=0
+        if (Math.abs(ny) < 14) {
+          ny = 0;
+          guides.push({
+            id: 'guide-origin-y',
+            orientation: 'horizontal',
+            positionPercent: 50,
+            label: 'Origine Section',
+            color: 'magenta',
+            coordText: 'Y: 0px',
+          });
+        }
+
+        setActiveSnapGuides(guides);
         setFreeDraggingBlock((prev) => (prev ? { ...prev, currentX: nx, currentY: ny } : null));
       } else if (freeDraggingCard) {
         const dx = (e.clientX - freeDraggingCard.startX) / scale;
         const dy = (e.clientY - freeDraggingCard.startY) / scale;
         let nx = Math.round(freeDraggingCard.origX + dx);
         let ny = Math.round(freeDraggingCard.origY + dy);
-        if (Math.abs(nx) < 10) nx = 0;
-        if (Math.abs(ny) < 10) ny = 0;
+
+        if (Math.abs(nx) < 10) {
+          nx = 0;
+          guides.push({
+            id: 'guide-card-col',
+            orientation: 'vertical',
+            positionPercent: 50,
+            label: 'Alignement Colonne',
+            color: 'cyan',
+            coordText: 'X: 0px',
+          });
+        }
+        if (Math.abs(ny) < 10) {
+          ny = 0;
+          guides.push({
+            id: 'guide-card-row',
+            orientation: 'horizontal',
+            positionPercent: 50,
+            label: 'Alignement Rangée de Cartes',
+            color: 'magenta',
+            coordText: 'Y: 0px',
+          });
+        }
+
+        setActiveSnapGuides(guides);
         setFreeDraggingCard((prev) => (prev ? { ...prev, currentX: nx, currentY: ny } : null));
       } else if (freeDraggingPlan) {
         const dx = (e.clientX - freeDraggingPlan.startX) / scale;
         const dy = (e.clientY - freeDraggingPlan.startY) / scale;
         let nx = Math.round(freeDraggingPlan.origX + dx);
         let ny = Math.round(freeDraggingPlan.origY + dy);
-        if (Math.abs(nx) < 10) nx = 0;
-        if (Math.abs(ny) < 10) ny = 0;
+
+        if (Math.abs(nx) < 10) {
+          nx = 0;
+          guides.push({
+            id: 'guide-plan-col',
+            orientation: 'vertical',
+            positionPercent: 50,
+            label: 'Alignement Colonne Forfait',
+            color: 'cyan',
+            coordText: 'X: 0px',
+          });
+        }
+        if (Math.abs(ny) < 10) {
+          ny = 0;
+          guides.push({
+            id: 'guide-plan-row',
+            orientation: 'horizontal',
+            positionPercent: 50,
+            label: 'Alignement Grille Tarifaire',
+            color: 'magenta',
+            coordText: 'Y: 0px',
+          });
+        }
+
+        setActiveSnapGuides(guides);
         setFreeDraggingPlan((prev) => (prev ? { ...prev, currentX: nx, currentY: ny } : null));
       } else if (freeDraggingElement) {
         const dx = (e.clientX - freeDraggingElement.startX) / scale;
         const dy = (e.clientY - freeDraggingElement.startY) / scale;
         let nx = Math.round(freeDraggingElement.origX + dx);
         let ny = Math.round(freeDraggingElement.origY + dy);
-        if (Math.abs(nx) < 8) nx = 0;
-        if (Math.abs(ny) < 8) ny = 0;
+
+        if (Math.abs(nx) < 10) {
+          nx = 0;
+          guides.push({
+            id: 'guide-elem-x',
+            orientation: 'vertical',
+            positionPercent: 50,
+            label: 'Axe Central',
+            color: 'cyan',
+            coordText: 'X: 0px',
+          });
+        }
+        if (Math.abs(ny) < 10) {
+          ny = 0;
+          guides.push({
+            id: 'guide-elem-y',
+            orientation: 'horizontal',
+            positionPercent: 50,
+            label: 'Ligne de Base',
+            color: 'magenta',
+            coordText: 'Y: 0px',
+          });
+        }
+
+        setActiveSnapGuides(guides);
         setFreeDraggingElement((prev) => (prev ? { ...prev, currentX: nx, currentY: ny } : null));
       }
     };
 
     const handleWindowPointerUp = () => {
+      setActiveSnapGuides([]);
+
       if (freeDraggingBlock) {
         const target = blocks.find((b) => b.id === freeDraggingBlock.id);
         if (target) {
@@ -820,6 +1555,317 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     });
   };
 
+  // Interactive Floating Quick Action Toolbar for Selected Canvas Elements
+  const ElementQuickHUD: React.FC<{
+    block: CanvasBlock;
+    elementKey: string;
+    label?: string;
+    activeHtmlTag?: string;
+    isAnimationTarget?: boolean;
+    themeAccent: string;
+    hasOffset: boolean;
+    onResetOffset: () => void;
+    onUpdateElemStyle: (updates: Partial<ElementCustomStyle>) => void;
+    onUpdateBlock: (block: CanvasBlock) => void;
+    onClose: () => void;
+  }> = ({
+    block,
+    elementKey,
+    label,
+    activeHtmlTag,
+    isAnimationTarget,
+    themeAccent,
+    hasOffset,
+    onResetOffset,
+    onUpdateElemStyle,
+    onUpdateBlock,
+    onClose,
+  }) => {
+    const [openPopover, setOpenPopover] = useState<'color' | 'ai' | null>(null);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+    const currentStyle = block.content.elementStyles?.[elementKey] || {};
+
+    const currentFontSize = currentStyle.fontSize || (elementKey.includes('title') || elementKey.includes('Title') ? 32 : 14);
+    const isBold = (currentStyle.fontWeight && Number(currentStyle.fontWeight) >= 600) || false;
+    const isItalic = currentStyle.fontStyle === 'italic';
+
+    const handleStepFontSize = (delta: number) => {
+      const newSize = Math.max(10, Math.min(96, currentFontSize + delta));
+      onUpdateElemStyle({ fontSize: newSize });
+    };
+
+    const handleToggleBold = () => {
+      onUpdateElemStyle({ fontWeight: isBold ? 400 : 700 });
+    };
+
+    const handleToggleItalic = () => {
+      onUpdateElemStyle({ fontStyle: isItalic ? 'normal' : 'italic' });
+    };
+
+    const handleCycleAlign = () => {
+      const current = currentStyle.textAlign || 'left';
+      const nextAlign = current === 'left' ? 'center' : current === 'center' ? 'right' : 'left';
+      onUpdateElemStyle({ textAlign: nextAlign });
+    };
+
+    const colorSwatches = [
+      { label: 'Thème Accent', color: themeAccent },
+      { label: 'Blanc Pur', color: '#ffffff' },
+      { label: 'Gris Ardoise', color: '#94a3b8' },
+      { label: 'Indigo', color: '#6366f1' },
+      { label: 'Cyan Cyber', color: '#06b6d4' },
+      { label: 'Émeraude', color: '#10b981' },
+      { label: 'Rose Néon', color: '#f43f5e' },
+      { label: 'Ambre Vif', color: '#f59e0b' },
+      { label: 'Violet Profond', color: '#a855f7' },
+    ];
+
+    const handleAiAction = async (action: 'punchy' | 'shorten' | 'professional' | 'en' | 'fr') => {
+      setIsAiLoading(true);
+      try {
+        let textToTransform = '';
+        if (elementKey === 'title' || elementKey === 'featuresTitle' || elementKey === 'pricingTitle' || elementKey === 'ctaBannerTitle') {
+          textToTransform = (block.content as any)[elementKey] || block.content.title || '';
+        } else if (elementKey === 'subtitle' || elementKey === 'featuresSubtitle' || elementKey === 'pricingSubtitle' || elementKey === 'ctaBannerSubtitle') {
+          textToTransform = (block.content as any)[elementKey] || block.content.subtitle || '';
+        } else if (elementKey === 'badgeText' || elementKey === 'featuresBadge' || elementKey === 'pricingBadge') {
+          textToTransform = block.content.badgeText || '';
+        } else if (elementKey === 'primaryCta' || elementKey === 'secondaryCta') {
+          textToTransform = elementKey === 'primaryCta' ? (block.content.primaryCtaText || '') : (block.content.secondaryCtaText || '');
+        }
+
+        if (textToTransform) {
+          const res = await fetch('/api/ai/text-transform', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToTransform, action, context: label || elementKey }),
+          });
+          const data = await res.json();
+          if (data.text) {
+            const contentUpdates: any = {};
+            if (elementKey === 'title' || elementKey === 'featuresTitle' || elementKey === 'pricingTitle' || elementKey === 'ctaBannerTitle') {
+              contentUpdates[elementKey] = data.text;
+              contentUpdates.title = data.text;
+            } else if (elementKey === 'subtitle' || elementKey === 'featuresSubtitle' || elementKey === 'pricingSubtitle' || elementKey === 'ctaBannerSubtitle') {
+              contentUpdates[elementKey] = data.text;
+              contentUpdates.subtitle = data.text;
+            } else if (elementKey === 'badgeText' || elementKey === 'featuresBadge' || elementKey === 'pricingBadge') {
+              contentUpdates.badgeText = data.text;
+            } else if (elementKey === 'primaryCta') {
+              contentUpdates.primaryCtaText = data.text;
+            } else if (elementKey === 'secondaryCta') {
+              contentUpdates.secondaryCtaText = data.text;
+            }
+
+            onUpdateBlock({
+              ...block,
+              content: { ...block.content, ...contentUpdates },
+            });
+          }
+        }
+      } catch (e) {
+        console.error('AI quick transform error:', e);
+      } finally {
+        setIsAiLoading(false);
+        setOpenPopover(null);
+      }
+    };
+
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="absolute -top-11 left-0 z-50 flex items-center gap-1 p-1 rounded-xl bg-[#080d1a]/95 border border-indigo-500/40 shadow-2xl backdrop-blur-xl text-xs select-none animate-in fade-in slide-in-from-bottom-2 duration-150 whitespace-nowrap"
+      >
+        {/* Label Badge */}
+        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-white font-mono text-[10px] font-semibold ${
+          isAnimationTarget ? 'bg-gradient-to-r from-fuchsia-600 to-indigo-600' : 'bg-indigo-600/50 text-indigo-200'
+        }`}>
+          {isAnimationTarget ? <Sparkles className="w-2.5 h-2.5 text-yellow-300 animate-pulse" /> : <MousePointerClick className="w-2.5 h-2.5" />}
+          <span>{label || elementKey}{activeHtmlTag ? ` <${activeHtmlTag}>` : ''}</span>
+        </div>
+
+        <div className="h-3.5 w-[1px] bg-white/10 mx-0.5" />
+
+        {/* Font Size A- / A+ */}
+        <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-white/5">
+          <button
+            onClick={() => handleStepFontSize(-2)}
+            title="Diminuer la taille (A-)"
+            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            A-
+          </button>
+          <span className="text-[10px] font-mono text-slate-400 px-1">{currentFontSize}px</span>
+          <button
+            onClick={() => handleStepFontSize(2)}
+            title="Augmenter la taille (A+)"
+            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            A+
+          </button>
+        </div>
+
+        {/* Bold & Italic */}
+        <button
+          onClick={handleToggleBold}
+          title="Gras"
+          className={`p-1 rounded-lg transition-colors ${
+            isBold ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Bold className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleToggleItalic}
+          title="Italique"
+          className={`p-1 rounded-lg transition-colors ${
+            isItalic ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Italic className="w-3 h-3" />
+        </button>
+
+        {/* Alignment */}
+        <button
+          onClick={handleCycleAlign}
+          title={`Alignement (${currentStyle.textAlign || 'gauche'})`}
+          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          {currentStyle.textAlign === 'center' ? (
+            <AlignCenter className="w-3 h-3 text-indigo-300" />
+          ) : currentStyle.textAlign === 'right' ? (
+            <AlignRight className="w-3 h-3 text-indigo-300" />
+          ) : (
+            <AlignLeft className="w-3 h-3" />
+          )}
+        </button>
+
+        <div className="h-3.5 w-[1px] bg-white/10 mx-0.5" />
+
+        {/* Color Popover */}
+        <div className="relative">
+          <button
+            onClick={() => setOpenPopover(openPopover === 'color' ? null : 'color')}
+            title="Palette de Couleurs Rapide"
+            className={`p-1 rounded-lg transition-colors flex items-center gap-1 ${
+              openPopover === 'color' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Palette className="w-3 h-3 text-indigo-400" />
+          </button>
+
+          {openPopover === 'color' && (
+            <div className="absolute top-8 left-0 z-50 p-2 rounded-xl bg-[#0a0f20]/98 border border-white/15 shadow-2xl backdrop-blur-2xl flex flex-col gap-2 w-48 animate-in fade-in duration-150">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Couleur du texte</span>
+              <div className="grid grid-cols-5 gap-1.5">
+                {colorSwatches.map((swatch, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      onUpdateElemStyle({ color: swatch.color, textColor: swatch.color, isGradientText: false });
+                      setOpenPopover(null);
+                    }}
+                    title={swatch.label}
+                    className="w-5 h-5 rounded-full border border-white/20 transition-transform hover:scale-125"
+                    style={{ backgroundColor: swatch.color }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  onUpdateElemStyle({
+                    isGradientText: true,
+                    background: `linear-gradient(135deg, ${themeAccent}, #c084fc, #f472b6)`,
+                  });
+                  setOpenPopover(null);
+                }}
+                className="px-2 py-1 rounded-lg text-[10px] font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity text-center shadow-md"
+              >
+                Texte Dégradé Cyber
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* AI Polish Popover */}
+        <div className="relative">
+          <button
+            onClick={() => setOpenPopover(openPopover === 'ai' ? null : 'ai')}
+            title="Assistant IA Réécriture & Polish"
+            disabled={isAiLoading}
+            className={`flex items-center gap-1 px-1.5 py-1 rounded-lg border text-[10px] font-medium transition-colors ${
+              openPopover === 'ai' ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-300 border-indigo-400/30'
+            }`}
+          >
+            {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin text-indigo-300" /> : <Wand2 className="w-3 h-3 text-indigo-400" />}
+            <span>IA</span>
+          </button>
+
+          {openPopover === 'ai' && (
+            <div className="absolute top-8 left-0 z-50 w-44 p-1 rounded-xl bg-[#0a0f20]/98 border border-white/15 shadow-2xl backdrop-blur-2xl flex flex-col gap-0.5 text-xs animate-in fade-in duration-150">
+              <button
+                onClick={() => handleAiAction('punchy')}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[10px] transition-colors"
+              >
+                <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>Plus percutant</span>
+              </button>
+              <button
+                onClick={() => handleAiAction('shorten')}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[10px] transition-colors"
+              >
+                <Zap className="w-3 h-3 text-cyan-400 shrink-0" />
+                <span>Raccourcir (Concis)</span>
+              </button>
+              <button
+                onClick={() => handleAiAction('professional')}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[10px] transition-colors"
+              >
+                <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>Ton Pro B2B</span>
+              </button>
+              <div className="h-[1px] bg-white/10 my-0.5" />
+              <button
+                onClick={() => handleAiAction('en')}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[10px] transition-colors"
+              >
+                <span>🇬🇧</span>
+                <span>Traduire en Anglais</span>
+              </button>
+              <button
+                onClick={() => handleAiAction('fr')}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-indigo-500/20 text-slate-200 hover:text-white text-left text-[10px] transition-colors"
+              >
+                <span>🇫🇷</span>
+                <span>Traduire en Français</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Recenter button if moved */}
+        {hasOffset && (
+          <button
+            onClick={onResetOffset}
+            title="Recentrer cet élément (X:0, Y:0)"
+            className="p-1 rounded-lg text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        )}
+
+        {/* Close / Deselect */}
+        <button
+          onClick={onClose}
+          title="Fermer la sélection"
+          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-0.5"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  };
+
   // Reusable 2D Freeform Movable Element Wrapper
   const renderMovable = ({
     block,
@@ -856,15 +1902,26 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     if (customElemStyle.display === 'none' || block.content.elementStyles?.[elementKey]?.hidden) {
       return null;
     }
+    const isAnimationTarget = 
+      (block.style?.animationTarget === elementKey) || 
+      (block.style?.animationTarget === 'cta' && (elementKey === 'primaryCta' || elementKey === 'secondaryCta')) ||
+      (block.style?.advancedAnimEnabled && (
+        block.style?.advancedAnimTarget === elementKey ||
+        (block.style?.advancedAnimTarget === 'cta' && (elementKey === 'primaryCta' || elementKey === 'secondaryCta'))
+      )) ||
+      (block.style?.animStylePropsEnabled && (
+        block.style?.animStyleTarget === elementKey ||
+        (block.style?.animStyleTarget === 'cta' && (elementKey === 'primaryCta' || elementKey === 'secondaryCta'))
+      ));
+
     const activeHtmlTag = block.content.elementStyles?.[elementKey]?.htmlTag;
     const baseTag = (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'button', 'a', 'span', 'div', 'section', 'header', 'footer'].includes(activeHtmlTag || '') ? activeHtmlTag : 'div');
     
-    const isAlreadyAnimated = ['title', 'primaryCta', 'visuals'].includes(elementKey);
-    const animProps = isAlreadyAnimated ? {} : resolveFramerAnimation(block, elementKey, hoveredElements[block.id] === block.style?.hoverTriggerSource);
-    const hoverProps = (isAlreadyAnimated || block.style?.hoverTriggerSource !== elementKey) ? {} : {
+    const animProps = resolveFramerAnimation(block, elementKey, hoveredElements[block.id] === block.style?.hoverTriggerSource);
+    const hoverProps = block.style?.hoverTriggerSource === elementKey ? {
       onMouseEnter: () => setHoveredElements(prev => ({ ...prev, [block.id]: elementKey })),
       onMouseLeave: () => setHoveredElements(prev => ({ ...prev, [block.id]: 'none' }))
-    };
+    } : {};
     
     const isAnimated = Object.keys(animProps).length > 0 || Object.keys(hoverProps).length > 0;
     const Tag: any = isAnimated ? (motion as any)[baseTag] : baseTag;
@@ -875,7 +1932,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
         ? `translate3d(${elemOffsetX}px, ${elemOffsetY}px, 0px)`
         : undefined,
       zIndex: isThisElementDragging ? 50 : isElementSelected ? 30 : undefined,
-      transition: isThisElementDragging ? 'none' : 'transform 0.15s ease-out, color 0.15s, background-color 0.15s',
+      transition: isThisElementDragging ? 'none' : isAnimated ? undefined : 'transform 0.15s ease-out, color 0.15s, background-color 0.15s',
     };
 
     if (isPreviewMode) {
@@ -914,30 +1971,64 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
           isThisElementDragging
             ? 'z-40 ring-2 ring-cyan-400 ring-offset-2 ring-offset-[#07090e] rounded-lg'
             : isElementSelected
-            ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#07090e] rounded-lg shadow-lg shadow-indigo-500/20'
+            ? isAnimationTarget
+              ? 'ring-2 ring-fuchsia-500 ring-offset-2 ring-offset-[#07090e] rounded-lg shadow-lg shadow-fuchsia-500/30'
+              : 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#07090e] rounded-lg shadow-lg shadow-indigo-500/20'
+            : isAnimationTarget
+            ? 'ring-1.5 ring-fuchsia-500/80 shadow-sm shadow-fuchsia-500/25 rounded-lg'
             : isFreeformMode
             ? 'hover:ring-1 hover:ring-indigo-400/40 rounded-lg'
             : 'hover:ring-1 hover:ring-white/20 rounded-lg'
         }`}
         style={combinedStyle}
       >
-        {/* Selected Element Label Pill */}
+        {/* Selected Element Floating Quick Action Toolbar HUD */}
         {isElementSelected && (
           <>
-            <div className="absolute -top-6 left-0 z-50 flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[9px] font-semibold shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in font-mono">
-              <MousePointerClick className="w-2.5 h-2.5" />
-              <span>
-                {label || elementKey}
-                {activeHtmlTag ? ` <${activeHtmlTag}>` : ''}
-              </span>
-            </div>
+            <ElementQuickHUD
+              block={block}
+              elementKey={elementKey}
+              label={label}
+              activeHtmlTag={activeHtmlTag}
+              isAnimationTarget={isAnimationTarget}
+              themeAccent={themeAccent}
+              hasOffset={hasElemOffset}
+              onResetOffset={() => resetElementOffset(block.id, elementKey)}
+              onUpdateElemStyle={(updates) => {
+                const currentStyles = { ...(block.content.elementStyles || {}) };
+                const currentElemStyle = { ...(currentStyles[elementKey] || {}) };
+                currentStyles[elementKey] = {
+                  ...currentElemStyle,
+                  ...updates,
+                };
+                onUpdateBlock({
+                  ...block,
+                  content: {
+                    ...block.content,
+                    elementStyles: currentStyles,
+                  },
+                });
+              }}
+              onUpdateBlock={onUpdateBlock}
+              onClose={() => {
+                if (onSelectElement) onSelectElement(null);
+              }}
+            />
 
             {/* Figma-style 4 Corner Handles */}
-            <div className="w-2 h-2 bg-white border-2 border-indigo-500 rounded-sm absolute -top-1 -left-1 z-50 pointer-events-none shadow-sm" />
-            <div className="w-2 h-2 bg-white border-2 border-indigo-500 rounded-sm absolute -top-1 -right-1 z-50 pointer-events-none shadow-sm" />
-            <div className="w-2 h-2 bg-white border-2 border-indigo-500 rounded-sm absolute -bottom-1 -left-1 z-50 pointer-events-none shadow-sm" />
-            <div className="w-2 h-2 bg-white border-2 border-indigo-500 rounded-sm absolute -bottom-1 -right-1 z-50 pointer-events-none shadow-sm" />
+            <div className={`w-2 h-2 bg-white border-2 ${isAnimationTarget ? 'border-fuchsia-500' : 'border-indigo-500'} rounded-sm absolute -top-1 -left-1 z-50 pointer-events-none shadow-sm`} />
+            <div className={`w-2 h-2 bg-white border-2 ${isAnimationTarget ? 'border-fuchsia-500' : 'border-indigo-500'} rounded-sm absolute -top-1 -right-1 z-50 pointer-events-none shadow-sm`} />
+            <div className={`w-2 h-2 bg-white border-2 ${isAnimationTarget ? 'border-fuchsia-500' : 'border-indigo-500'} rounded-sm absolute -bottom-1 -left-1 z-50 pointer-events-none shadow-sm`} />
+            <div className={`w-2 h-2 bg-white border-2 ${isAnimationTarget ? 'border-fuchsia-500' : 'border-indigo-500'} rounded-sm absolute -bottom-1 -right-1 z-50 pointer-events-none shadow-sm`} />
           </>
+        )}
+
+        {/* Animation Target Indicator Badge when not directly selected */}
+        {isAnimationTarget && !isElementSelected && (
+          <div className="absolute -top-2.5 -right-2 z-30 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white text-[8px] font-mono font-bold shadow-md flex items-center gap-1 pointer-events-none group-hover/movable:scale-105 transition-transform">
+            <span>🎯</span>
+            <span className="hidden sm:inline">Cible Animée</span>
+          </div>
         )}
 
         {/* Floating coordinates indicator during dragging */}
@@ -1199,7 +2290,8 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
       borderRadius: s.borderRadius !== undefined ? `${s.borderRadius}px` : undefined,
       borderColor: s.borderColor || undefined,
       borderWidth: s.borderWidth !== undefined ? `${s.borderWidth}px` : undefined,
-      borderStyle: s.borderWidth ? 'solid' : undefined,
+      borderStyle: s.borderStyle || (s.borderWidth ? 'solid' : undefined),
+      boxShadow: s.boxShadow || undefined,
       paddingTop: s.paddingTop !== undefined ? `${s.paddingTop}px` : undefined,
       paddingBottom: s.paddingBottom !== undefined ? `${s.paddingBottom}px` : undefined,
       paddingLeft: s.paddingLeft !== undefined ? `${s.paddingLeft}px` : undefined,
@@ -1210,11 +2302,29 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
       WebkitBackdropFilter: s.backdropBlur ? `blur(${s.backdropBlur}px)` : undefined,
       color: s.textColor || undefined,
       fontSize: s.fontSize ? `${s.fontSize}px` : undefined,
+      fontFamily: s.fontFamily || undefined,
+      letterSpacing: s.letterSpacing !== undefined ? `${s.letterSpacing}px` : undefined,
+      lineHeight: s.lineHeight !== undefined ? s.lineHeight : undefined,
+      overflow: s.overflow || undefined,
       margin: '0 auto',
       width: '100%',
       boxSizing: 'border-box',
       transition: 'all 0.15s ease-out',
     };
+
+    // CSS Visual Filters
+    const filterParts: string[] = [];
+    if (s.filterBlur) filterParts.push(`blur(${s.filterBlur}px)`);
+    if (s.filterBrightness !== undefined && s.filterBrightness !== 1) filterParts.push(`brightness(${s.filterBrightness})`);
+    if (s.filterContrast !== undefined && s.filterContrast !== 1) filterParts.push(`contrast(${s.filterContrast})`);
+    if (s.filterSaturate !== undefined && s.filterSaturate !== 1) filterParts.push(`saturate(${s.filterSaturate})`);
+    if (s.filterHueRotate) filterParts.push(`hue-rotate(${s.filterHueRotate}deg)`);
+    if (s.filterGrayscale) filterParts.push(`grayscale(${s.filterGrayscale}%)`);
+    if (s.filterInvert) filterParts.push(`invert(${s.filterInvert}%)`);
+    if (filterParts.length > 0) {
+      styleObj.filter = filterParts.join(' ');
+      (styleObj as any).WebkitFilter = filterParts.join(' ');
+    }
 
     if (!isTransparent && bgVal) {
       if (isGrad) {
@@ -1223,53 +2333,200 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
         styleObj.backgroundColor = bgVal;
       }
     }
+
+    // Pattern Overlay integration
+    if (s.patternOverlay && s.patternOverlay !== 'none') {
+      const pOp = s.patternOpacity !== undefined ? s.patternOpacity : 0.15;
+      let patternBg = '';
+      if (s.patternOverlay === 'dots') {
+        patternBg = `radial-gradient(rgba(255, 255, 255, ${pOp}) 1px, transparent 1px)`;
+        styleObj.backgroundSize = '24px 24px';
+      } else if (s.patternOverlay === 'grid') {
+        patternBg = `linear-gradient(rgba(255, 255, 255, ${pOp * 0.7}) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, ${pOp * 0.7}) 1px, transparent 1px)`;
+        styleObj.backgroundSize = '32px 32px';
+      } else if (s.patternOverlay === 'stripes') {
+        patternBg = `repeating-linear-gradient(45deg, rgba(255, 255, 255, ${pOp * 0.5}), rgba(255, 255, 255, ${pOp * 0.5}) 2px, transparent 2px, transparent 16px)`;
+      } else if (s.patternOverlay === 'circuit') {
+        patternBg = `radial-gradient(circle at 50% 50%, rgba(99, 102, 241, ${pOp}) 0%, transparent 60%), linear-gradient(rgba(255, 255, 255, ${pOp * 0.4}) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, ${pOp * 0.4}) 1px, transparent 1px)`;
+        styleObj.backgroundSize = '100% 100%, 40px 40px, 40px 40px';
+      } else if (s.patternOverlay === 'mesh') {
+        patternBg = `radial-gradient(at 0% 0%, rgba(236, 72, 153, ${pOp * 1.5}) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(99, 102, 241, ${pOp * 1.5}) 0px, transparent 50%)`;
+      }
+
+      if (patternBg) {
+        if (styleObj.background) {
+          styleObj.backgroundImage = `${patternBg}, ${styleObj.background}`;
+        } else {
+          styleObj.backgroundImage = patternBg;
+        }
+      }
+    }
+
     return styleObj;
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden relative select-none">
-      {/* Integrated Canvas Helper & Mode Bar (Non-floating, fully integrated into app layout) */}
-      {!isPreviewMode && (
-        <div className="w-full bg-[#080b14]/95 border-b border-white/[0.08] px-4 py-2 flex items-center justify-between gap-3 text-xs shrink-0 backdrop-blur-md z-20">
-          <div className="flex items-center gap-2.5 text-[11px] text-slate-300 min-w-0">
-            <div className="p-1 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shrink-0">
-              <Move className="w-3.5 h-3.5" />
-            </div>
-            <span className="truncate">
-              {isFreeformMode ? (
-                <>
-                  <strong className="text-cyan-300 font-medium">Mode Libre 2D :</strong> Cliquez et glissez n&apos;importe quel bloc ou élément à la souris pour le positionner librement.
-                </>
-              ) : (
-                <>
-                  <strong className="text-slate-200 font-medium">Éditeur Visuel :</strong> Cliquez sur une section pour la personnaliser dans l&apos;inspecteur ou glissez pour réordonner.
-                </>
-              )}
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative select-none">
+      {/* Floating Canvas Studio HUD Dock (Superposed Over Canvas Viewport, Modern Studio UX) */}
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full studio-dock text-xs select-none max-w-[94vw] overflow-x-auto shadow-2xl transition-all"
+      >
+        {isPreviewMode ? (
+          <div className="flex items-center gap-2 px-1">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-medium text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Mode Aperçu Réel
             </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {onToggleFreeformMode && (
+            {onTogglePreviewMode && (
               <button
-                onClick={onToggleFreeformMode}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  isFreeformMode
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm shadow-cyan-500/20'
-                    : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10'
-                }`}
+                onClick={onTogglePreviewMode}
+                className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[11px] font-medium border border-emerald-500/30 transition-colors"
               >
-                <Move className="w-3 h-3" />
-                <span>{isFreeformMode ? 'Libre Actif' : 'Activer Mode Libre'}</span>
+                Quitter l&apos;aperçu
               </button>
             )}
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            {/* 1. Selection Breadcrumb Pill */}
+            <div className="flex items-center gap-1.5 px-1 text-[11px] text-slate-300 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+              {selectedElement && currentSelectedBlock ? (
+                <div className="flex items-center gap-1 font-mono">
+                  <span className="text-slate-400 truncate max-w-[90px]">{currentSelectedBlock.name}</span>
+                  <span className="text-white/30">›</span>
+                  <span className="text-indigo-300 font-medium truncate max-w-[110px]">{selectedElement.label}</span>
+                  <button
+                    onClick={() => {
+                      if (onSelectElement) onSelectElement(null);
+                    }}
+                    title="Désélectionner l'élément"
+                    className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors ml-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : currentSelectedBlock ? (
+                <div className="flex items-center gap-1 font-mono">
+                  <span className="text-indigo-300 font-medium truncate max-w-[130px]">{currentSelectedBlock.name}</span>
+                  <button
+                    onClick={() => onSelectBlock(null)}
+                    title="Désélectionner la section"
+                    className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors ml-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <span className="text-slate-400 font-mono text-[11px]">
+                  Canvas Studio <span className="text-white/30">•</span> {blocks.length} sections
+                </span>
+              )}
+            </div>
+
+            <div className="h-3.5 w-[1px] bg-white/10 shrink-0" />
+
+            {/* 2. Responsive Viewport Mode Switcher */}
+            {onViewportChange && (
+              <div className="flex items-center bg-black/40 rounded-full p-0.5 border border-white/5 shrink-0">
+                <button
+                  onClick={() => onViewportChange('desktop')}
+                  title="Vue Bureau (1200px)"
+                  className={`p-1 rounded-full transition-colors ${
+                    viewportMode === 'desktop'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Monitor className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => onViewportChange('tablet')}
+                  title="Vue Tablette (768px)"
+                  className={`p-1 rounded-full transition-colors ${
+                    viewportMode === 'tablet'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Tablet className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => onViewportChange('mobile')}
+                  title="Vue Mobile (390px)"
+                  className={`p-1 rounded-full transition-colors ${
+                    viewportMode === 'mobile'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Smartphone className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            <div className="h-3.5 w-[1px] bg-white/10 shrink-0" />
+
+            {/* 3. Interactive Zoom Controller */}
+            {onZoomChange && (
+              <div className="flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5 border border-white/5 text-[11px] shrink-0 font-mono">
+                <button
+                  onClick={() => onZoomChange(Math.max(40, zoomLevel - 10))}
+                  title="Zoom arrière (-10%)"
+                  disabled={zoomLevel <= 40}
+                  className="p-0.5 rounded text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                >
+                  <ZoomOut className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => onZoomChange(100)}
+                  title="Réinitialiser à 100%"
+                  className="px-1 text-slate-300 hover:text-white font-medium hover:underline transition-all"
+                >
+                  {zoomLevel}%
+                </button>
+                <button
+                  onClick={() => onZoomChange(Math.min(160, zoomLevel + 10))}
+                  title="Zoom avant (+10%)"
+                  disabled={zoomLevel >= 160}
+                  className="p-0.5 rounded text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                >
+                  <ZoomIn className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            <div className="h-3.5 w-[1px] bg-white/10 shrink-0" />
+
+            {/* 4. Freeform 2D Mode Toggle */}
+            {onToggleFreeformMode && (
+              <button
+                onClick={onToggleFreeformMode}
+                title={isFreeformMode ? "Mode Libre 2D actif (Déplacement X/Y libre)" : "Activer le Mode Libre 2D"}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 ${
+                  isFreeformMode
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-sm shadow-cyan-500/20'
+                    : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10'
+                }`}
+              >
+                <Move className={`w-3 h-3 ${isFreeformMode ? 'text-cyan-300 animate-pulse' : ''}`} />
+                <span className="hidden sm:inline">{isFreeformMode ? 'Libre 2D' : 'Mode Libre'}</span>
+              </button>
+            )}
+
+            {/* 5. Viewport Width Badge */}
+            <span className="hidden md:inline text-[10px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 rounded-md shrink-0">
+              {getViewportWidth()}
+            </span>
+          </>
+        )}
+      </div>
 
       {/* Main Canvas Stage Scroll Area */}
       <main
         onClick={() => onSelectBlock(null)}
-        className="flex-1 overflow-auto canvas-grid relative flex justify-center p-4 md:p-8 select-none"
+        className="flex-1 overflow-auto canvas-grid relative flex justify-center p-4 md:p-8 pt-16 select-none"
       >
         {/* Scaled Device Viewport Frame */}
       <div
@@ -1293,6 +2550,73 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
             <span className="text-[9px]">9:41</span>
             <div className="w-20 h-3.5 bg-black rounded-full mx-auto" />
             <div className="flex items-center gap-1 text-[8px]">5G 100%</div>
+          </div>
+        )}
+
+        {/* Smart Snap Guides Visual Overlay (Magenta & Cyan Laser Alignment Lines) */}
+        {Boolean(freeDraggingBlock || freeDraggingCard || freeDraggingPlan || freeDraggingElement) && activeSnapGuides.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+            {activeSnapGuides.map((guide) => {
+              const isVertical = guide.orientation === 'vertical';
+              const isCyan = guide.color === 'cyan';
+              return (
+                <div
+                  key={guide.id}
+                  style={isVertical ? { left: `${guide.positionPercent}%` } : { top: `${guide.positionPercent}%` }}
+                  className={`absolute pointer-events-none flex items-center justify-center animate-in fade-in duration-150 ${
+                    isVertical
+                      ? 'top-0 bottom-0 -translate-x-1/2 w-4 flex-col'
+                      : 'left-0 right-0 -translate-y-1/2 h-4'
+                  }`}
+                >
+                  {/* Glowing Laser Guide Line */}
+                  <div
+                    className={`${
+                      isVertical
+                        ? 'w-[2px] h-full shadow-[0_0_12px_rgba(6,182,212,1)]'
+                        : 'h-[2px] w-full shadow-[0_0_12px_rgba(217,70,239,1)]'
+                    } ${isCyan ? 'bg-cyan-400' : 'bg-fuchsia-400'}`}
+                    style={{
+                      backgroundImage: isVertical
+                        ? (isCyan
+                            ? 'repeating-linear-gradient(to bottom, #22d3ee 0, #22d3ee 8px, transparent 8px, transparent 14px)'
+                            : 'repeating-linear-gradient(to bottom, #e879f9 0, #e879f9 8px, transparent 8px, transparent 14px)')
+                        : (isCyan
+                            ? 'repeating-linear-gradient(to right, #22d3ee 0, #22d3ee 8px, transparent 8px, transparent 14px)'
+                            : 'repeating-linear-gradient(to right, #e879f9 0, #e879f9 8px, transparent 8px, transparent 14px)'),
+                    }}
+                  />
+
+                  {/* Magnetic Alignment Badge */}
+                  <div
+                    className={`absolute px-3 py-1 rounded-full text-[11px] font-mono font-bold shadow-2xl backdrop-blur-xl border flex items-center gap-1.5 whitespace-nowrap ${
+                      isVertical ? 'top-6' : 'left-8'
+                    } ${
+                      isCyan
+                        ? 'bg-[#041624]/95 border-cyan-400 text-cyan-200 shadow-cyan-500/40 ring-1 ring-cyan-500/40'
+                        : 'bg-[#24041e]/95 border-fuchsia-400 text-fuchsia-200 shadow-fuchsia-500/40 ring-1 ring-fuchsia-500/40'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full animate-ping ${isCyan ? 'bg-cyan-400' : 'bg-fuchsia-400'}`} />
+                    <span>{guide.label}</span>
+                    {guide.coordText && (
+                      <span className="opacity-70 text-[10px]">({guide.coordText})</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Magnetic Crosshair Target if both axes are snapped */}
+            {activeSnapGuides.some((g) => g.orientation === 'vertical') &&
+              activeSnapGuides.some((g) => g.orientation === 'horizontal') && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full border-2 border-cyan-400/80 animate-ping opacity-60 shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
+                  <div className="absolute w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 to-fuchsia-400 shadow-2xl flex items-center justify-center text-[10px] text-black font-black">
+                    ⌖
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
@@ -1530,6 +2854,43 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                           + Forfait
                         </button>
                       )}
+
+                      {/* Quick Spacing & Width Controls */}
+                      <div className="flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded-lg border border-white/5">
+                        {/* Max Width */}
+                        <button
+                          onClick={() => {
+                            const widths = ['800px', '1200px', '100%'];
+                            const curr = block.style?.maxWidth || '1200px';
+                            const next = widths[(widths.indexOf(curr) + 1) % widths.length];
+                            onUpdateBlock({
+                              ...block,
+                              style: { ...block.style, maxWidth: next },
+                            });
+                          }}
+                          title={`Largeur max: ${block.style?.maxWidth || '1200px'} (cliquer pour changer)`}
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                        >
+                          {block.style?.maxWidth === '800px' ? '800px' : block.style?.maxWidth === '100%' ? '100%' : '1200px'}
+                        </button>
+
+                        {/* Padding */}
+                        <button
+                          onClick={() => {
+                            const paddings = [24, 48, 80];
+                            const curr = block.style?.paddingTop || 48;
+                            const next = paddings[(paddings.indexOf(curr) + 1) % paddings.length];
+                            onUpdateBlock({
+                              ...block,
+                              style: { ...block.style, paddingTop: next, paddingBottom: next },
+                            });
+                          }}
+                          title={`Espacement vertical: ${block.style?.paddingTop || 48}px (cliquer pour changer)`}
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                        >
+                          P:{block.style?.paddingTop || 48}px
+                        </button>
+                      </div>
 
                       {/* Quick Background Color Switch */}
                       <div className="flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded-lg border border-white/5">
@@ -1806,14 +3167,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                         label: 'Titre Principal',
                         className: 'w-full flex justify-center',
                         children: (
-                          <motion.div 
-                            {...resolveFramerAnimation(block, 'title', hoveredElements[block.id] === block.style?.hoverTriggerSource)} 
-                            className="w-full text-center flex flex-col items-center"
-                            {...(block.style?.hoverTriggerSource === 'title' ? {
-                              onMouseEnter: () => setHoveredElements(prev => ({ ...prev, [block.id]: 'title' })),
-                              onMouseLeave: () => setHoveredElements(prev => ({ ...prev, [block.id]: 'none' }))
-                            } : {})}
-                          >
+                          <div className="w-full text-center flex flex-col items-center">
                             <h1
                               className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] max-w-3xl"
                               style={{ color: getElemTextColor(block, 'title', true, '#ffffff') }}
@@ -1846,7 +3200,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                                 />
                               </span>
                             </h1>
-                          </motion.div>
+                          </div>
                         ),
                       })}
 
@@ -1886,14 +3240,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                           children: (() => {
                             const heroPriStyle = getElemStyle(block, 'primaryCta');
                             return (
-                              <motion.div 
-                                {...resolveFramerAnimation(block, 'primaryCta', hoveredElements[block.id] === block.style?.hoverTriggerSource)} 
-                                className="inline-block"
-                                {...(block.style?.hoverTriggerSource === 'cta' ? {
-                                  onMouseEnter: () => setHoveredElements(prev => ({ ...prev, [block.id]: 'cta' })),
-                                  onMouseLeave: () => setHoveredElements(prev => ({ ...prev, [block.id]: 'none' }))
-                                } : {})}
-                              >
+                              <div className="inline-block">
                                 <button
                                   className="inline-flex items-center gap-2 text-white font-medium px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-[1.02] text-xs sm:text-sm"
                                   style={{
@@ -1915,7 +3262,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                                   />
                                   <ArrowRight className="w-4 h-4" />
                                 </button>
-                              </motion.div>
+                              </div>
                             );
                           })(),
                         })}

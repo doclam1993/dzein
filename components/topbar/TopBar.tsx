@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { 
   Monitor, Tablet, Smartphone, 
   Download, Eye, Edit3, Plus, 
-  Code2, RotateCcw, ChevronDown, Move, Bot, Sliders, Undo2, Redo2
+  Code2, RotateCcw, ChevronDown, Move, Bot, Sliders, Undo2, Redo2,
+  Wand2, Image as ImageIcon, ShieldCheck, Sparkles, Tv
 } from 'lucide-react';
 import { ViewportMode, BlockType } from '@/types/builder';
 
@@ -34,6 +35,13 @@ interface TopBarProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  onOpenOnePromptModal?: () => void;
+  onOpenImageAvatarModal?: () => void;
+  onOpenDesignAuditModal?: () => void;
+  onOpenComponentLibraryModal?: () => void;
+  onOpenFxModal?: () => void;
+  isPresentationMode?: boolean;
+  onTogglePresentationMode?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -62,6 +70,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   onRedo,
   canUndo = false,
   canRedo = false,
+  onOpenOnePromptModal,
+  onOpenImageAvatarModal,
+  onOpenDesignAuditModal,
+  onOpenComponentLibraryModal,
+  onOpenFxModal,
+  isPresentationMode = false,
+  onTogglePresentationMode,
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(projectName);
@@ -151,12 +166,24 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Component Library & Design System Modal Trigger */}
+        {onOpenComponentLibraryModal && (
+          <button
+            onClick={onOpenComponentLibraryModal}
+            title="Ouvrir le Catalogue de Templates & Bibliothèque de Composants (Bento, Carrousels, Forms, Fonts, Icônes)"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/40 text-indigo-200 hover:text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/10 active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+            <span className="hidden lg:inline">Design System</span>
+          </button>
+        )}
       </div>
 
-      {/* Center: Undo/Redo + Device Switcher */}
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      {/* Center: Undo/Redo + Color Swatches + AI Super-Tools */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 bg-black/40 border border-white/10 rounded-xl p-0.5">
+        <div className="flex items-center gap-0.5 bg-black/40 border border-white/[0.08] rounded-xl p-0.5">
           <button
             onClick={onUndo}
             disabled={!canUndo}
@@ -179,45 +206,56 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         </div>
 
-        {/* Device Switcher */}
-        <div className="flex items-center bg-black/40 border border-white/10 rounded-xl p-0.5">
+        {/* 1-Prompt Landing Page Generator Quick Button */}
+        {onOpenOnePromptModal && (
           <button
-            onClick={() => onViewportChange('desktop')}
-            title="Vue Bureau (1200px)"
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              viewportMode === 'desktop'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={onOpenOnePromptModal}
+            title="Générer un site complet en 1 prompt (Navbar, Hero, Bento, 3D, Tarifs, FAQ, Footer)"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border border-indigo-500/40 text-indigo-200 hover:text-white text-xs font-semibold shadow-md shadow-indigo-500/10 transition-all active:scale-95"
           >
-            <Monitor className="w-3.5 h-3.5" />
+            <Wand2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+            <span className="hidden md:inline">Générer 1-Prompt</span>
           </button>
-          <button
-            onClick={() => onViewportChange('tablet')}
-            title="Vue Tablette (768px)"
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              viewportMode === 'tablet'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Tablet className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onViewportChange('mobile')}
-            title="Vue Mobile (390px)"
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              viewportMode === 'mobile'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        )}
 
-        {/* Theme Accent Swatches (Hidden on very small screens, visible on md+) */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-xl px-2 py-1.5">
+        {/* Images & Avatars IA Quick Button */}
+        {onOpenImageAvatarModal && (
+          <button
+            onClick={onOpenImageAvatarModal}
+            title="Générateur d'images, visuels héros et avatars IA"
+            className="hidden lg:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/35 text-cyan-200 hover:text-white text-xs font-medium transition-all active:scale-95"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span>Images & Avatars IA</span>
+          </button>
+        )}
+
+        {/* Design Audit & UI Linter (WCAG AA) Quick Button */}
+        {onOpenDesignAuditModal && (
+          <button
+            onClick={onOpenDesignAuditModal}
+            title="Scanner le design & l'accessibilité WCAG AA (Audit en 1 clic)"
+            className="hidden lg:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-200 hover:text-white text-xs font-medium transition-all active:scale-95"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Audit UI</span>
+          </button>
+        )}
+
+        {/* Advanced Background Effects & Scroll Animations Button */}
+        {onOpenFxModal && (
+          <button
+            onClick={onOpenFxModal}
+            title="Configurer les effets de fond (Aurores boréales, Grilles, Particules, Grain) et animations scroll"
+            className="hidden lg:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/35 text-pink-200 hover:text-white text-xs font-medium transition-all active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+            <span>Effets & Scroll</span>
+          </button>
+        )}
+
+        {/* Theme Accent Swatches */}
+        <div className="hidden xl:flex items-center gap-1.5 bg-black/40 border border-white/[0.08] rounded-xl px-2.5 py-1.5">
           {themePalettes.map((p) => (
             <button
               key={p.color}
@@ -226,7 +264,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               className={`w-3.5 h-3.5 rounded-full transition-all ${
                 themeAccent === p.color
                   ? 'scale-125 ring-2 ring-white ring-offset-1 ring-offset-[#080b13]'
-                  : 'opacity-70 hover:opacity-100 hover:scale-110'
+                  : 'opacity-65 hover:opacity-100 hover:scale-110'
               }`}
               style={{ backgroundColor: p.color }}
             />
@@ -267,6 +305,22 @@ export const TopBar: React.FC<TopBarProps> = ({
             </>
           )}
         </button>
+
+        {/* Mode Présentation Client */}
+        {onTogglePresentationMode && (
+          <button
+            onClick={onTogglePresentationMode}
+            title="Mode Présentation Client (Plein Écran)"
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm shrink-0 ${
+              isPresentationMode
+                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/50 shadow-md'
+                : 'bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:text-white'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="hidden md:inline">Présentation</span>
+          </button>
+        )}
 
         {/* Freeform 2D Mode Toggle (Desktop & Tablet) */}
         {!isPreviewMode && onToggleFreeformMode && (

@@ -77,12 +77,30 @@ export default {
   const packageJsonContent = `{
   "name": "opendesign-generated-saas",
   "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
+    "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.470.0",
+    "lucide-react": "^0.553.0",
+    "motion": "^12.0.0",
     "three": "^0.170.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@types/three": "^0.170.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.0.0",
     "tailwindcss": "^4.0.0"
   }
 }`;

@@ -13,6 +13,14 @@ import { LeftSidebar } from '@/components/sidebar/LeftSidebar';
 import { RightSidebar } from '@/components/sidebar/RightSidebar';
 import { ExportModal } from '@/components/export/ExportModal';
 import { AIProvidersModal } from '@/components/ai/AIProvidersModal';
+import { OnePromptGeneratorModal } from '@/components/ai/OnePromptGeneratorModal';
+import { ImageAvatarGeneratorModal } from '@/components/ai/ImageAvatarGeneratorModal';
+import { DesignAuditModal } from '@/components/ai/DesignAuditModal';
+import { ComponentLibraryModal } from '@/components/templates/ComponentLibraryModal';
+import { AdvancedBackgroundCanvas, BackgroundConfig, DEFAULT_BG_CONFIG } from '@/components/effects/AdvancedBackgroundCanvas';
+import { BackgroundAndScrollModal } from '@/components/effects/BackgroundAndScrollModal';
+import { ScrollAnimationType } from '@/components/effects/ScrollAnimationWrapper';
+import { TemplatePreset } from '@/lib/templatesData';
 import { AIProvider, AIAgentSettings, AgentErrorRecord, AgentExecutionLog } from '@/types/ai';
 import { 
   loadStoredProviders, saveStoredProviders, 
@@ -22,7 +30,8 @@ import {
 import { 
   X, Copy, Check, Code2, GripVertical, 
   Bot, Sliders, Layout, Sparkles, Download, 
-  Eye, Edit3, Smartphone, Tablet, Monitor, Layers
+  Eye, Edit3, Smartphone, Tablet, Monitor, Layers,
+  ChevronLeft, SlidersHorizontal, Tv
 } from 'lucide-react';
 
 export default function OpenDesignStudio() {
@@ -94,10 +103,23 @@ export default function OpenDesignStudio() {
 
   // State: Viewport & Mode
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
-  const [zoomLevel] = useState<number>(100);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [isPresentationMode, setIsPresentationMode] = useState<boolean>(false);
   const [isFreeformMode, setIsFreeformMode] = useState<boolean>(true);
   const [themeAccent, setThemeAccent] = useState<string>('#6366f1');
+
+  // Listen for Escape key to exit presentation mode
+  useEffect(() => {
+    if (!isPresentationMode) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPresentationMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPresentationMode]);
 
   // State: Resizable Side Panels Widths
   const [leftPanelWidth, setLeftPanelWidth] = useState<number>(390);
@@ -119,6 +141,75 @@ export default function OpenDesignStudio() {
   const [executionLogs, setExecutionLogs] = useState<AgentExecutionLog[]>([]);
   const [providers, setProviders] = useState<AIProvider[]>(DEFAULT_AI_PROVIDERS);
   const [aiSettings, setAiSettings] = useState<AIAgentSettings>(DEFAULT_AGENT_SETTINGS);
+
+  // State: AI Super-Modals (1-Prompt Page Generator, Images/Avatars Generator, UI Linter Audit, Component Library & FX)
+  const [isOnePromptModalOpen, setIsOnePromptModalOpen] = useState(false);
+  const [isImageAvatarModalOpen, setIsImageAvatarModalOpen] = useState(false);
+  const [isDesignAuditModalOpen, setIsDesignAuditModalOpen] = useState(false);
+  const [isComponentLibraryModalOpen, setIsComponentLibraryModalOpen] = useState(false);
+  const [isFxModalOpen, setIsFxModalOpen] = useState(false);
+  const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(DEFAULT_BG_CONFIG);
+
+  const handleSelectTemplate = (template: TemplatePreset) => {
+    commitBlocksChange(template.blocks);
+    if (template.themeAccent) setThemeAccent(template.themeAccent);
+    if (template.bgConfig) setBackgroundConfig(template.bgConfig);
+    handleNewCommit(`Application du template "${template.name}"`);
+  };
+
+  const handleApplyScrollPresetToBlocks = (scrollPreset: ScrollAnimationType) => {
+    commitBlocksChange((prev) =>
+      prev.map((block) => ({
+        ...block,
+        style: {
+          ...block.style,
+          animationEntrance: scrollPreset as any,
+          animationTrigger: 'scroll',
+        },
+      }))
+    );
+    handleNewCommit(`Application du preset d'animation Scroll (${scrollPreset}) sur tous les blocs`);
+  };
+
+  const handleApplyGeneratedPage = (newBlocks: CanvasBlock[], newProjName?: string, newAccent?: string) => {
+    commitBlocksChange(newBlocks);
+    if (newProjName) setProjectName(newProjName);
+    if (newAccent) setThemeAccent(newAccent);
+    handleNewCommit("Génération complète de Landing Page en 1 Prompt");
+  };
+
+  const handleSelectGeneratedImage = (imageUrl: string, altText?: string) => {
+    if (selectedElement) {
+      const block = blocks.find((b) => b.id === selectedElement.blockId);
+      if (!block) return;
+      const updatedBlock = JSON.parse(JSON.stringify(block)) as CanvasBlock;
+      if (!updatedBlock.content.elementStyles) {
+        updatedBlock.content.elementStyles = {};
+      }
+      const existingStyle = updatedBlock.content.elementStyles[selectedElement.elementKey] || {};
+      updatedBlock.content.elementStyles[selectedElement.elementKey] = {
+        ...existingStyle,
+        imageSrc: imageUrl,
+        imageAlt: altText || existingStyle.imageAlt || 'Image IA',
+      };
+      commitBlocksChange((prev) => prev.map((b) => (b.id === updatedBlock.id ? updatedBlock : b)));
+    } else if (selectedBlockId) {
+      const block = blocks.find((b) => b.id === selectedBlockId);
+      if (!block) return;
+      const updatedBlock = JSON.parse(JSON.stringify(block)) as CanvasBlock;
+      if (!updatedBlock.content.elementStyles) updatedBlock.content.elementStyles = {};
+      updatedBlock.content.elementStyles['heroImage'] = {
+        imageSrc: imageUrl,
+        imageAlt: altText || 'Visuel IA',
+      };
+      commitBlocksChange((prev) => prev.map((b) => (b.id === updatedBlock.id ? updatedBlock : b)));
+    }
+  };
+
+  const handleApplyAuditFix = (fixedBlocks: CanvasBlock[]) => {
+    commitBlocksChange(fixedBlocks);
+    handleNewCommit("Correction automatique Design & Accessibilité (WCAG AA)");
+  };
 
   // State: Left Panel Mode (Tree vs AI Assistant) & Git Commits
   const [leftPanelTab, setLeftPanelTab] = useState<'ai' | 'tree'>('tree');
@@ -735,6 +826,9 @@ export default function OpenDesignStudio() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#07090e] text-slate-100 selection:bg-indigo-500 selection:text-white font-sans antialiased relative">
+      {/* 🌌 Ambient Advanced Background FX Canvas (Aurores, Grilles, Particules, Grain) */}
+      <AdvancedBackgroundCanvas config={backgroundConfig} />
+
       {/* 🏁 START POINT CHOOSER MODAL (Scratch vs Template) */}
       {showSetupModal && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -833,7 +927,7 @@ export default function OpenDesignStudio() {
       )}
 
       {/* Mobile Backdrop for Left AI Panel */}
-      {isAIPanelOpen && (
+      {isAIPanelOpen && !isPresentationMode && (
         <div 
           onClick={() => setIsAIPanelOpen(false)}
           className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
@@ -841,33 +935,48 @@ export default function OpenDesignStudio() {
       )}
 
       {/* Left Panel: Professional Dual-Mode Container (Arborescence Pro & Assistant IA) */}
-      <div className="flex flex-col h-screen shrink-0 relative bg-[#0a0d16] border-r border-white/[0.08]" style={{ width: leftPanelWidth }}>
+      <div 
+        className={`flex flex-col h-screen shrink-0 relative bg-[#090d17]/95 border-r border-white/[0.06] backdrop-blur-xl transition-[width,opacity] duration-250 ease-in-out ${
+          (isAIPanelOpen && !isPresentationMode) ? 'opacity-100 min-w-[280px]' : 'w-0 !border-0 overflow-hidden pointer-events-none opacity-0'
+        }`} 
+        style={{ width: (isAIPanelOpen && !isPresentationMode) ? leftPanelWidth : 0 }}
+      >
         {/* Top Professional Left Panel Tab Switcher */}
-        <div className="flex items-center bg-[#07090e] border-b border-white/[0.08] px-2 py-2 gap-1.5 shrink-0">
+        <div className="flex items-center justify-between bg-[#07090e]/90 border-b border-white/[0.06] px-2.5 py-2 gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <button
+              onClick={() => setLeftPanelTab('tree')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                leftPanelTab === 'tree'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-cyan-300" />
+              <span className="truncate">Arborescence</span>
+              <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-mono shrink-0">
+                {blocks.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setLeftPanelTab('ai')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                leftPanelTab === 'ai'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Bot className="w-3.5 h-3.5 text-indigo-300" />
+              <span className="truncate">Assistant IA</span>
+            </button>
+          </div>
+
           <button
-            onClick={() => setLeftPanelTab('tree')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
-              leftPanelTab === 'tree'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
+            onClick={() => setIsAIPanelOpen(false)}
+            title="Réduire le volet gauche"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
-            <Layers className="w-3.5 h-3.5 text-cyan-300" />
-            <span>Arborescence</span>
-            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-mono">
-              {blocks.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setLeftPanelTab('ai')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
-              leftPanelTab === 'ai'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5 text-indigo-300" />
-            <span>Assistant IA</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -912,7 +1021,7 @@ export default function OpenDesignStudio() {
       </div>
 
       {/* Resizer Divider between Left Panel and Studio Canvas (Desktop only) */}
-      {isAIPanelOpen && (
+      {isAIPanelOpen && !isPresentationMode && (
         <div
           onPointerDown={handleStartLeftResize}
           onDoubleClick={() => setLeftPanelWidth(390)}
@@ -927,46 +1036,106 @@ export default function OpenDesignStudio() {
 
       {/* Right Studio Area: TopBar + Interactive 2D/3D Canvas + Right Sidebar Inspector */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
-        <TopBar
-          projectName={projectName}
-          onUpdateProjectName={setProjectName}
-          viewportMode={viewportMode}
-          onViewportChange={setViewportMode}
-          isPreviewMode={isPreviewMode}
-          onTogglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
-          isFreeformMode={isFreeformMode}
-          onToggleFreeformMode={() => setIsFreeformMode(!isFreeformMode)}
-          onOpenExportModal={() => setIsExportModalOpen(true)}
-          themeAccent={themeAccent}
-          onUpdateThemeAccent={setThemeAccent}
-          onAddBlock={(type) => handleAddBlock(type)}
-          onResetToDefault={handleResetToDefault}
-          isCodeDrawerOpen={isCodeDrawerOpen}
-          onToggleCodeDrawer={() => setIsCodeDrawerOpen(!isCodeDrawerOpen)}
-          onOpenAIModal={() => setIsAIModalOpen(true)}
-          isAIPanelOpen={isAIPanelOpen}
-          onToggleAIPanel={() => {
-            if (!isAIPanelOpen && isInspectorOpen && typeof window !== 'undefined' && window.innerWidth < 1024) {
-              setIsInspectorOpen(false);
-            }
-            setIsAIPanelOpen(!isAIPanelOpen);
-          }}
-          activeModelName={activeModel?.name}
-          isInspectorOpen={isInspectorOpen}
-          onToggleInspector={() => {
-            if (!isInspectorOpen && isAIPanelOpen && typeof window !== 'undefined' && window.innerWidth < 1024) {
-              setIsAIPanelOpen(false);
-            }
-            setIsInspectorOpen(!isInspectorOpen);
-          }}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={historyIndex > 0}
-          canRedo={historyIndex < history.length - 1}
-        />
+        {!isPresentationMode && (
+          <TopBar
+            projectName={projectName}
+            onUpdateProjectName={setProjectName}
+            viewportMode={viewportMode}
+            onViewportChange={setViewportMode}
+            isPreviewMode={isPreviewMode}
+            onTogglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
+            isFreeformMode={isFreeformMode}
+            onToggleFreeformMode={() => setIsFreeformMode(!isFreeformMode)}
+            onOpenExportModal={() => setIsExportModalOpen(true)}
+            themeAccent={themeAccent}
+            onUpdateThemeAccent={setThemeAccent}
+            onAddBlock={(type) => handleAddBlock(type)}
+            onResetToDefault={handleResetToDefault}
+            isCodeDrawerOpen={isCodeDrawerOpen}
+            onToggleCodeDrawer={() => setIsCodeDrawerOpen(!isCodeDrawerOpen)}
+            onOpenAIModal={() => setIsAIModalOpen(true)}
+            isAIPanelOpen={isAIPanelOpen}
+            onToggleAIPanel={() => {
+              if (!isAIPanelOpen && isInspectorOpen && typeof window !== 'undefined' && window.innerWidth < 1024) {
+                setIsInspectorOpen(false);
+              }
+              setIsAIPanelOpen(!isAIPanelOpen);
+            }}
+            activeModelName={activeModel?.name}
+            isInspectorOpen={isInspectorOpen}
+            onToggleInspector={() => {
+              if (!isInspectorOpen && isAIPanelOpen && typeof window !== 'undefined' && window.innerWidth < 1024) {
+                setIsAIPanelOpen(false);
+              }
+              setIsInspectorOpen(!isInspectorOpen);
+            }}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={historyIndex > 0}
+            canRedo={historyIndex < history.length - 1}
+            onOpenOnePromptModal={() => setIsOnePromptModalOpen(true)}
+            onOpenImageAvatarModal={() => setIsImageAvatarModalOpen(true)}
+            onOpenDesignAuditModal={() => setIsDesignAuditModalOpen(true)}
+            onOpenComponentLibraryModal={() => setIsComponentLibraryModalOpen(true)}
+            onOpenFxModal={() => setIsFxModalOpen(true)}
+            isPresentationMode={isPresentationMode}
+            onTogglePresentationMode={() => {
+              setIsPresentationMode(true);
+              setIsPreviewMode(true);
+            }}
+          />
+        )}
 
         {/* Main Studio Canvas and Panels */}
-        <div className="flex-1 flex overflow-hidden relative min-w-0 pb-14 lg:pb-0">
+        <div className={`flex-1 flex overflow-hidden relative min-w-0 ${isPresentationMode ? '' : 'pb-14 lg:pb-0'}`}>
+          {/* Floating Left Quick-Trigger when Left Panel is collapsed */}
+          {!isAIPanelOpen && !isPresentationMode && (
+            <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-1 p-1 rounded-full studio-dock shadow-2xl animate-in fade-in slide-in-from-left-2 duration-200">
+              <button
+                onClick={() => {
+                  setLeftPanelTab('tree');
+                  setIsAIPanelOpen(true);
+                }}
+                title="Ouvrir l'Arborescence des blocs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-slate-300 hover:text-white hover:bg-white/10 text-xs font-medium transition-all group"
+              >
+                <Layers className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline text-[11px]">Arborescence</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/10 text-[9px] font-mono text-slate-300">
+                  {blocks.length}
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setLeftPanelTab('ai');
+                  setIsAIPanelOpen(true);
+                }}
+                title="Ouvrir l'Assistant IA"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-slate-300 hover:text-white hover:bg-white/10 text-xs font-medium transition-all group"
+              >
+                <Bot className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline text-[11px]">Assistant IA</span>
+              </button>
+            </div>
+          )}
+
+          {/* Floating Right Quick-Trigger when Inspector is collapsed */}
+          {!isInspectorOpen && !isPresentationMode && (
+            <div className="absolute top-3.5 right-3.5 z-30 animate-in fade-in slide-in-from-right-2 duration-200">
+              <button
+                onClick={() => setIsInspectorOpen(true)}
+                title="Ouvrir l'Inspecteur de Propriétés"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full studio-dock shadow-2xl text-slate-300 hover:text-white text-xs font-medium transition-all hover:border-indigo-500/40 group"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-45 transition-transform" />
+                <span className="text-[11px]">Inspecteur</span>
+                {selectedBlockId && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                )}
+              </button>
+            </div>
+          )}
+
           <BuilderCanvas
             blocks={blocks}
             selectedBlockId={selectedBlockId}
@@ -1002,15 +1171,18 @@ export default function OpenDesignStudio() {
             onReorderBlocks={handleReorderBlocks}
             onAddBlock={handleAddBlock}
             viewportMode={viewportMode}
+            onViewportChange={setViewportMode}
             zoomLevel={zoomLevel}
+            onZoomChange={setZoomLevel}
             isPreviewMode={isPreviewMode}
+            onTogglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
             isFreeformMode={isFreeformMode}
             onToggleFreeformMode={() => setIsFreeformMode(!isFreeformMode)}
             themeAccent={themeAccent}
           />
 
           {/* Resizer Divider between Canvas and Right Inspector (Desktop only) */}
-          {isInspectorOpen && (
+          {isInspectorOpen && !isPresentationMode && (
             <div
               onPointerDown={handleStartRightResize}
               onDoubleClick={() => setRightSidebarWidth(380)}
@@ -1024,7 +1196,7 @@ export default function OpenDesignStudio() {
           )}
 
           {/* Mobile Backdrop for Right Inspector */}
-          {isInspectorOpen && (
+          {isInspectorOpen && !isPresentationMode && (
             <div 
               onClick={() => setIsInspectorOpen(false)}
               className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
@@ -1050,7 +1222,7 @@ export default function OpenDesignStudio() {
             }}
             onRejectDiff={() => setLatestProposal(null)}
             themeAccent={themeAccent}
-            isOpen={isInspectorOpen}
+            isOpen={isInspectorOpen && !isPresentationMode}
             onClose={() => {
               setIsInspectorOpen(false);
               setSelectedElement(null);
@@ -1111,101 +1283,126 @@ export default function OpenDesignStudio() {
         </div>
 
         {/* High-Craft Mobile & Tablet Quick Bottom Navigation Bar */}
-        <nav 
-          aria-label="Navigation mobile"
-          className="fixed bottom-0 inset-x-0 h-14 bg-[#080b15]/95 backdrop-blur-2xl border-t border-white/10 flex items-center justify-around px-2 z-30 lg:hidden shadow-2xl select-none"
-        >
-          {/* AI Console Button */}
-          <button
-            onClick={() => {
-              if (isInspectorOpen) setIsInspectorOpen(false);
-              setIsAIPanelOpen(!isAIPanelOpen);
-            }}
-            className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
-              isAIPanelOpen
-                ? 'text-purple-300 bg-purple-500/20 shadow-inner'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+        {!isPresentationMode && (
+          <nav 
+            aria-label="Navigation mobile"
+            className="fixed bottom-0 inset-x-0 h-14 bg-[#080b15]/95 backdrop-blur-2xl border-t border-white/10 flex items-center justify-around px-2 z-30 lg:hidden shadow-2xl select-none"
           >
-            <div className="relative">
-              <Bot className="w-4 h-4 text-purple-400" />
-              {isAgentLoading && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            {/* AI Console Button */}
+            <button
+              onClick={() => {
+                if (isInspectorOpen) setIsInspectorOpen(false);
+                setIsAIPanelOpen(!isAIPanelOpen);
+              }}
+              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
+                isAIPanelOpen
+                  ? 'text-purple-300 bg-purple-500/20 shadow-inner'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="relative">
+                <Bot className="w-4 h-4 text-purple-400" />
+                {isAgentLoading && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                )}
+              </div>
+              <span className="text-[10px] font-medium tracking-tight">Agent IA</span>
+            </button>
+
+            {/* Viewport Cycle Button */}
+            <button
+              onClick={() => {
+                if (viewportMode === 'desktop') setViewportMode('tablet');
+                else if (viewportMode === 'tablet') setViewportMode('mobile');
+                else setViewportMode('desktop');
+              }}
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
+            >
+              {viewportMode === 'mobile' ? (
+                <Smartphone className="w-4 h-4 text-indigo-400" />
+              ) : viewportMode === 'tablet' ? (
+                <Tablet className="w-4 h-4 text-indigo-400" />
+              ) : (
+                <Monitor className="w-4 h-4 text-indigo-400" />
               )}
-            </div>
-            <span className="text-[10px] font-medium tracking-tight">Agent IA</span>
-          </button>
+              <span className="text-[10px] font-medium tracking-tight uppercase">
+                {viewportMode === 'mobile' ? 'Mobile' : viewportMode === 'tablet' ? 'Tablette' : 'Bureau'}
+              </span>
+            </button>
 
-          {/* Viewport Cycle Button */}
-          <button
-            onClick={() => {
-              if (viewportMode === 'desktop') setViewportMode('tablet');
-              else if (viewportMode === 'tablet') setViewportMode('mobile');
-              else setViewportMode('desktop');
-            }}
-            className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
-          >
-            {viewportMode === 'mobile' ? (
-              <Smartphone className="w-4 h-4 text-indigo-400" />
-            ) : viewportMode === 'tablet' ? (
-              <Tablet className="w-4 h-4 text-indigo-400" />
-            ) : (
-              <Monitor className="w-4 h-4 text-indigo-400" />
-            )}
-            <span className="text-[10px] font-medium tracking-tight uppercase">
-              {viewportMode === 'mobile' ? 'Mobile' : viewportMode === 'tablet' ? 'Tablette' : 'Bureau'}
-            </span>
-          </button>
+            {/* Inspector / Properties Button */}
+            <button
+              onClick={() => {
+                if (isAIPanelOpen) setIsAIPanelOpen(false);
+                setIsInspectorOpen(!isInspectorOpen);
+              }}
+              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
+                isInspectorOpen
+                  ? 'text-indigo-300 bg-indigo-500/20 shadow-inner'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className="relative">
+                <Sliders className="w-4 h-4 text-indigo-400" />
+                {selectedBlockId && (
+                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                )}
+              </div>
+              <span className="text-[10px] font-medium tracking-tight">Inspecteur</span>
+            </button>
 
-          {/* Inspector / Properties Button */}
-          <button
-            onClick={() => {
-              if (isAIPanelOpen) setIsAIPanelOpen(false);
-              setIsInspectorOpen(!isInspectorOpen);
-            }}
-            className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
-              isInspectorOpen
-                ? 'text-indigo-300 bg-indigo-500/20 shadow-inner'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <div className="relative">
-              <Sliders className="w-4 h-4 text-indigo-400" />
-              {selectedBlockId && (
-                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            {/* Mode Switch (Preview vs Edit) */}
+            <button
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
+                isPreviewMode
+                  ? 'text-emerald-300 bg-emerald-500/15'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {isPreviewMode ? (
+                <Eye className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <Edit3 className="w-4 h-4 text-slate-300" />
               )}
+              <span className="text-[10px] font-medium tracking-tight">
+                {isPreviewMode ? 'Aperçu' : 'Édition'}
+              </span>
+            </button>
+
+            {/* Export Code Button */}
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-indigo-300 hover:text-white transition-all"
+            >
+              <Download className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px] font-medium tracking-tight">Export</span>
+            </button>
+          </nav>
+        )}
+
+        {/* Presentation Mode Floating Controller */}
+        {isPresentationMode && (
+          <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-slate-900/90 border border-white/10 backdrop-blur-md shadow-2xl">
+              <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+              <span className="text-[11px] font-medium tracking-wide uppercase font-sans text-slate-300">
+                Mode Présentation
+              </span>
+              <div className="h-3 w-[1px] bg-white/10" />
+              <button
+                onClick={() => {
+                  setIsPresentationMode(false);
+                }}
+                className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full transition-all font-semibold"
+                title="Quitter (ou appuyer sur Échap)"
+              >
+                <span>Quitter</span>
+                <X className="w-3.5 h-3.5 text-purple-400" />
+              </button>
             </div>
-            <span className="text-[10px] font-medium tracking-tight">Inspecteur</span>
-          </button>
-
-          {/* Mode Switch (Preview vs Edit) */}
-          <button
-            onClick={() => setIsPreviewMode(!isPreviewMode)}
-            className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
-              isPreviewMode
-                ? 'text-emerald-300 bg-emerald-500/15'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {isPreviewMode ? (
-              <Eye className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <Edit3 className="w-4 h-4 text-slate-300" />
-            )}
-            <span className="text-[10px] font-medium tracking-tight">
-              {isPreviewMode ? 'Aperçu' : 'Édition'}
-            </span>
-          </button>
-
-          {/* Export Code Button */}
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-indigo-300 hover:text-white transition-all"
-          >
-            <Download className="w-4 h-4 text-indigo-400" />
-            <span className="text-[10px] font-medium tracking-tight">Export</span>
-          </button>
-        </nav>
+          </div>
+        )}
       </div>
 
       {/* Export Code Modal */}
@@ -1223,6 +1420,47 @@ export default function OpenDesignStudio() {
         onUpdateProviders={handleUpdateProviders}
         settings={aiSettings}
         onUpdateSettings={handleUpdateSettings}
+      />
+
+      {/* 1-Prompt Full Landing Page Generator Modal */}
+      <OnePromptGeneratorModal
+        isOpen={isOnePromptModalOpen}
+        onClose={() => setIsOnePromptModalOpen(false)}
+        onApplyBlocks={handleApplyGeneratedPage}
+        currentThemeAccent={themeAccent}
+      />
+
+      {/* AI Images & Avatars Generator Modal */}
+      <ImageAvatarGeneratorModal
+        isOpen={isImageAvatarModalOpen}
+        onClose={() => setIsImageAvatarModalOpen(false)}
+        onSelectImage={handleSelectGeneratedImage}
+        selectedElementTarget={selectedElement?.elementKey || (selectedBlockId ? 'Section sélectionnée' : null)}
+      />
+
+      {/* AI Design & WCAG AA Accessibility Audit UI Linter Modal */}
+      <DesignAuditModal
+        isOpen={isDesignAuditModalOpen}
+        onClose={() => setIsDesignAuditModalOpen(false)}
+        blocks={blocks}
+        onApplyAutoFix={handleApplyAuditFix}
+      />
+
+      {/* Component Library & Template Catalogue Modal */}
+      <ComponentLibraryModal
+        isOpen={isComponentLibraryModalOpen}
+        onClose={() => setIsComponentLibraryModalOpen(false)}
+        onSelectTemplate={handleSelectTemplate}
+        onAddBlock={handleAddBlock}
+      />
+
+      {/* Advanced Background FX & Scroll Animations Modal */}
+      <BackgroundAndScrollModal
+        isOpen={isFxModalOpen}
+        onClose={() => setIsFxModalOpen(false)}
+        currentConfig={backgroundConfig}
+        onUpdateConfig={setBackgroundConfig}
+        onApplyScrollPresetToBlocks={handleApplyScrollPresetToBlocks}
       />
     </div>
   );

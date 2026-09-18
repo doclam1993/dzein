@@ -187,15 +187,15 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   };
 
   return (
-    <aside className="w-72 h-[calc(100vh-3.5rem)] bg-[#0a0d16] border-r border-white/[0.08] flex flex-col shrink-0 select-none z-20">
+    <aside className="w-full h-full bg-[#090d17]/95 flex flex-col shrink-0 select-none z-20 min-w-0">
       {/* Sidebar Header Tabs */}
-      <div className="flex items-center border-b border-white/[0.08] px-2 pt-2 gap-1 bg-[#090c14]">
+      <div className="flex items-center border-b border-white/[0.06] p-1.5 gap-1 bg-[#070a12]/80 shrink-0">
         <button
           onClick={() => setActiveTab('tree')}
-          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
             activeTab === 'tree'
-              ? 'text-indigo-300 border-indigo-500 bg-white/[0.04]'
-              : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/[0.02]'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -204,25 +204,22 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
         <button
           onClick={() => setActiveTab('git')}
-          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
             activeTab === 'git'
-              ? 'text-purple-300 border-purple-500 bg-white/[0.04]'
-              : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/[0.02]'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
           <GitBranch className="w-3.5 h-3.5" />
-          <span>Git History</span>
-          <span className="text-[10px] px-1 rounded-full bg-purple-500/20 text-purple-300 font-mono">
-            {commits.length}
-          </span>
+          <span>Git ({commits.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('tokens')}
-          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-xl transition-all border-b-2 ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
             activeTab === 'tokens'
-              ? 'text-cyan-300 border-cyan-500 bg-white/[0.04]'
-              : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/[0.02]'
+              ? 'bg-cyan-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
           <Palette className="w-3.5 h-3.5" />
